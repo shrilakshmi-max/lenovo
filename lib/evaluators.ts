@@ -31,6 +31,12 @@ export function groupForEvaluator(name: string): EvaluatorGroup | undefined {
   );
 }
 
+export function groupForGroupNumber(
+  groupNumber: number
+): EvaluatorGroup | undefined {
+  return EVALUATOR_GROUPS.find((g) => g.groupNumber === groupNumber);
+}
+
 const STORAGE_KEY = "leap-hackathon-evaluator";
 
 export function saveEvaluator(name: EvaluatorName) {

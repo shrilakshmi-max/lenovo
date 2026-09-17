@@ -1,4 +1,5 @@
 import { LeaderboardRow } from "@/lib/types";
+import { groupForGroupNumber } from "@/lib/evaluators";
 
 export function LeaderboardTable({ rows }: { rows: LeaderboardRow[] }) {
   return (
@@ -10,11 +11,12 @@ export function LeaderboardTable({ rows }: { rows: LeaderboardRow[] }) {
             <th className="whitespace-nowrap px-4 py-3 font-semibold">Table</th>
             <th className="px-4 py-3 font-semibold">Team</th>
             <th className="hidden px-4 py-3 font-semibold sm:table-cell">Project</th>
+            <th className="whitespace-nowrap px-4 py-3 font-semibold">Evaluator team</th>
             <th className="whitespace-nowrap px-4 py-3 text-right font-semibold">
               Avg. score
             </th>
             <th className="hidden whitespace-nowrap px-4 py-3 text-right font-semibold sm:table-cell">
-              Judged by
+              Scored by
             </th>
           </tr>
         </thead>
@@ -22,6 +24,7 @@ export function LeaderboardTable({ rows }: { rows: LeaderboardRow[] }) {
           {rows.map((row, index) => {
             const rank = index + 1;
             const topTen = rank <= 10 && row.average_total !== null;
+            const evaluatorGroup = groupForGroupNumber(row.group_number);
             return (
               <tr
                 key={row.table_number}
@@ -53,6 +56,16 @@ export function LeaderboardTable({ rows }: { rows: LeaderboardRow[] }) {
                 </td>
                 <td className="hidden px-4 py-3 text-lenovo-muted sm:table-cell">
                   {row.project_title}
+                </td>
+                <td className="px-4 py-3">
+                  <span className="inline-flex items-center rounded-full bg-lenovo-navy/10 px-2.5 py-1 text-xs font-semibold text-lenovo-navy">
+                    Team {row.group_number}
+                  </span>
+                  {evaluatorGroup ? (
+                    <p className="mt-1 text-xs text-lenovo-muted">
+                      {evaluatorGroup.evaluators.join(" & ")}
+                    </p>
+                  ) : null}
                 </td>
                 <td className="px-4 py-3 text-right font-display font-semibold text-lenovo-ink">
                   {row.average_total !== null ? `${row.average_total} / 40` : "-"}
