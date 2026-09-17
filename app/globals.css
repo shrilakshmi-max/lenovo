@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-body: "Poppins", Helvetica, Arial, sans-serif;
+  --font-display: "Poppins", Helvetica, Arial, sans-serif;
+}
+
+html,
+body {
+  background-color: #fafafa;
+  color: #101014;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+::selection {
+  background-color: #e2231a;
+  color: #ffffff;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: #d4d4d8;
+  border-radius: 999px;
+}
