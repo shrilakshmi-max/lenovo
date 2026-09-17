@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Header } from "@/components/Header";
 import { EvaluatorPicker } from "@/components/EvaluatorPicker";
 
@@ -19,6 +20,13 @@ export default function WelcomePage() {
           </p>
         </div>
         <EvaluatorPicker />
+
+        <Link
+          href="/admin"
+          className="touch-target mt-10 flex items-center rounded-full border border-lenovo-line px-5 text-sm font-medium text-lenovo-muted transition-colors hover:border-lenovo-navy hover:text-lenovo-navy"
+        >
+          Admin
+        </Link>
       </main>
     </div>
   );

@@ -6,11 +6,13 @@ Lucknow.
 
 ## What's included
 
-- **Team database import** (`/admin`): upload the team-list CSV (same column
-  layout as the source sheet) to replace the current team data. Teams are
-  matched by **Table Number**, so re-uploading an updated file keeps scores
-  for tables that still exist and only removes tables that were dropped from
-  the file.
+- **Team database import** (`/admin`, linked from an "Admin" button on the
+  welcome page): upload the team-list CSV (same column layout as the source
+  sheet) to reset the database. Every import **deletes all existing teams
+  and scores first**, then loads the new file - there's no merge/preserve
+  behavior. A separate "Clear all data" action on the same page wipes
+  everything without needing a replacement file. Both require the admin
+  passcode and a confirmation prompt before running.
 - **Automatic grouping**: teams are sorted by table number ascending and
   split into 4 even groups on every import (`lib/csvImport.ts`).
 - **Evaluator selection that persists on-device** (`localStorage`, not a
@@ -58,9 +60,11 @@ SUPABASE_SERVICE_ROLE_KEY=...
 ADMIN_PASSWORD=...
 ```
 
-`ADMIN_PASSWORD` is the passcode organizers enter on `/admin` to import the
-team list. There's no link to `/admin` in the app's navigation - share the
-URL directly with organizers only.
+`ADMIN_PASSWORD` is the passcode organizers enter on `/admin` (reachable via
+the "Admin" button on the welcome page) to import or clear the team list.
+It gates the API, not page visibility, so anyone with the URL can see the
+form - only the passcode-holder can actually run either action. Keep it
+out of evaluators' hands and change it from the default before the event.
 
 ### 3. Add the Lenovo logo
 

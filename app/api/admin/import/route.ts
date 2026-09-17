@@ -35,43 +35,30 @@ export async function POST(req: NextRequest) {
   }
 
   const grouped = assignGroups(rows);
-  const incomingTableNumbers = grouped.map((r) => r.table_number);
 
-  const { data: existing, error: existingError } = await supabaseAdmin
+  // Full reset: every upload wipes all existing teams (and, via the
+  // on-delete-cascade foreign key, all existing scores) and replaces them
+  // with the new file. There is no merge/preserve behavior - this is
+  // intentionally destructive so organizers get a clean slate every time.
+  const { error: deleteError } = await supabaseAdmin
     .from("teams")
-    .select("table_number");
+    .delete()
+    .gte("table_number", 0);
 
-  if (existingError) {
-    return NextResponse.json({ error: existingError.message }, { status: 500 });
+  if (deleteError) {
+    return NextResponse.json({ error: deleteError.message }, { status: 500 });
   }
 
-  const existingTableNumbers = (existing ?? []).map((r) => r.table_number as number);
-  const toDelete = existingTableNumbers.filter(
-    (n) => !incomingTableNumbers.includes(n)
-  );
-
-  if (toDelete.length > 0) {
-    const { error: deleteError } = await supabaseAdmin
-      .from("teams")
-      .delete()
-      .in("table_number", toDelete);
-
-    if (deleteError) {
-      return NextResponse.json({ error: deleteError.message }, { status: 500 });
-    }
-  }
-
-  const { error: upsertError } = await supabaseAdmin
+  const { error: insertError } = await supabaseAdmin
     .from("teams")
-    .upsert(grouped, { onConflict: "table_number" });
+    .insert(grouped);
 
-  if (upsertError) {
-    return NextResponse.json({ error: upsertError.message }, { status: 500 });
+  if (insertError) {
+    return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
 
   return NextResponse.json({
     imported: grouped.length,
-    removed: toDelete.length,
     warnings: parseErrors,
   });
 }
