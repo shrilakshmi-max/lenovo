@@ -15,6 +15,7 @@ const config: Config = {
           "navy-deep": "#060F26",
           maroon: "#6E1423",
           purple: "#3B1F4F",
+          success: "#1D7A46",
           ink: "#101014",
           paper: "#FAFAFA",
           line: "#E4E4E7",

@@ -21,7 +21,7 @@ export function TeamCard({
             Table {team.table_number}
           </span>
           {graded ? (
-            <span className="rounded-full bg-lenovo-navy/10 px-2.5 py-1 text-xs font-semibold text-lenovo-navy">
+            <span className="rounded-full bg-lenovo-success/10 px-2.5 py-1 text-xs font-semibold text-lenovo-success">
               Graded - {score}/40
             </span>
           ) : (
