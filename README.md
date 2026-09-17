@@ -64,10 +64,9 @@ URL directly with organizers only.
 
 ### 3. Add the Lenovo logo
 
-Drop your official logo files into `public/` - see
-[`public/README-ASSETS.txt`](public/README-ASSETS.txt). The app renders a
-plain text wordmark until those files are present, it never ships a
-recreated Lenovo logo.
+Done - `public/lenovo-logo.png` is the official logo and `components/Logo.tsx`
+renders it in the header. See [`public/README-ASSETS.txt`](public/README-ASSETS.txt)
+if you need to swap it for a different file later.
 
 ### 4. Install and run
 
