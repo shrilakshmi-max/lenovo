@@ -66,11 +66,12 @@ It gates the API, not page visibility, so anyone with the URL can see the
 form - only the passcode-holder can actually run either action. Keep it
 out of evaluators' hands and change it from the default before the event.
 
-### 3. Add the Lenovo logo
+### 3. Branding
 
-Done - `public/lenovo-logo.png` is the official logo and `components/Logo.tsx`
-renders it in the header. See [`public/README-ASSETS.txt`](public/README-ASSETS.txt)
-if you need to swap it for a different file later.
+No logo image is used - `components/Logo.tsx` renders "Lenovo" as styled
+text (brand red) next to "LEAP HACKATHON". See
+[`public/README-ASSETS.txt`](public/README-ASSETS.txt) if you want to
+switch to an image logo later.
 
 ### 4. Install and run
 

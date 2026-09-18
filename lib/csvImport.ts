@@ -53,8 +53,7 @@ export function parseTeamsCsv(csvText: string): ParseResult {
   }
 
   const dataRows = rows.slice(1); // first row is the header
-  const result: ParsedTeamRow[] = [];
-  const seenTableNumbers = new Set<number>();
+  const byTableNumber = new Map<number, ParsedTeamRow>();
 
   dataRows.forEach((row, index) => {
     const csvLineNumber = index + 2; // +1 for header, +1 for 1-based
@@ -66,14 +65,16 @@ export function parseTeamsCsv(csvText: string): ParseResult {
       return;
     }
 
-    if (seenTableNumbers.has(tableNumber)) {
+    if (byTableNumber.has(tableNumber)) {
       errors.push(
-        `Line ${csvLineNumber}: duplicate Table Number ${tableNumber} - later row overwrote the earlier one.`
+        `Line ${csvLineNumber}: duplicate Table Number ${tableNumber} - this row overwrote the earlier one.`
       );
     }
-    seenTableNumbers.add(tableNumber);
 
-    result.push({
+    // A Map keyed by table number guarantees uniqueness (table_number is
+    // the primary key) - later rows overwrite earlier ones with the same
+    // number, matching the warning above.
+    byTableNumber.set(tableNumber, {
       table_number: tableNumber,
       team_id: clean(row[1]),
       team_name: clean(row[2]),
@@ -89,7 +90,7 @@ export function parseTeamsCsv(csvText: string): ParseResult {
     });
   });
 
-  return { rows: result, errors };
+  return { rows: Array.from(byTableNumber.values()), errors };
 }
 
 export interface GroupedTeamRow extends ParsedTeamRow {
