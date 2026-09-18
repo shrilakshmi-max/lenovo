@@ -33,7 +33,7 @@ Lucknow.
 |---|---|
 | 1 | Amit, Saurabh |
 | 2 | Neha, Nishant |
-| 3 | Priyanshi, Yash |
+| 3 | Priyanshi, Yash/Utkarsh |
 | 4 | Amanpreet, Ayush |
 
 Defined in `lib/evaluators.ts` - edit that file if names change.

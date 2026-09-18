@@ -4,7 +4,7 @@ export type EvaluatorName =
   | "Neha"
   | "Nishant"
   | "Priyanshi"
-  | "Yash"
+  | "Yash/Utkarsh"
   | "Amanpreet"
   | "Ayush";
 
@@ -17,7 +17,7 @@ export interface EvaluatorGroup {
 export const EVALUATOR_GROUPS: EvaluatorGroup[] = [
   { groupNumber: 1, label: "Group 1", evaluators: ["Amit", "Saurabh"] },
   { groupNumber: 2, label: "Group 2", evaluators: ["Neha", "Nishant"] },
-  { groupNumber: 3, label: "Group 3", evaluators: ["Priyanshi", "Yash"] },
+  { groupNumber: 3, label: "Group 3", evaluators: ["Priyanshi", "Yash/Utkarsh"] },
   { groupNumber: 4, label: "Group 4", evaluators: ["Amanpreet", "Ayush"] },
 ];
 
