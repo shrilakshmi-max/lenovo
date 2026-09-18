@@ -11,6 +11,7 @@ export default function Round2TeamsPage() {
   const evaluatorName = useRound2Evaluator();
 
   const [teams, setTeams] = useState<Team[] | null>(null);
+  const [rankByTable, setRankByTable] = useState<Record<number, number>>({});
   const [scoreByTable, setScoreByTable] = useState<Record<number, number>>({});
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "pending" | "graded">("all");
@@ -23,15 +24,36 @@ export default function Round2TeamsPage() {
       const { data: teamRows, error: teamError } = await supabase
         .from("teams")
         .select("*")
-        .eq("round2_qualified", true)
-        .order("table_number", { ascending: true });
+        .eq("round2_qualified", true);
 
       if (cancelled) return;
       if (teamError) {
         setError(teamError.message);
         return;
       }
-      setTeams(teamRows as Team[]);
+
+      // Order by round 1 rank (their position on the round 1 leaderboard),
+      // not table number - these are "the top 20", so that ordering is
+      // more meaningful than table order.
+      const { data: leaderboardRows } = await supabase
+        .from("leaderboard")
+        .select("table_number")
+        .order("average_total", { ascending: false, nullsFirst: false })
+        .order("table_number", { ascending: true });
+
+      const rankOrder = new Map<number, number>();
+      (leaderboardRows ?? []).forEach((row: any, index: number) => {
+        rankOrder.set(row.table_number, index + 1);
+      });
+
+      const sorted = [...((teamRows as Team[]) ?? [])].sort((a, b) => {
+        const rankA = rankOrder.get(a.table_number) ?? Number.MAX_SAFE_INTEGER;
+        const rankB = rankOrder.get(b.table_number) ?? Number.MAX_SAFE_INTEGER;
+        return rankA - rankB;
+      });
+
+      setTeams(sorted);
+      setRankByTable(Object.fromEntries(rankOrder));
 
       const { data: scoreRows, error: scoreError } = await supabase
         .from("round2_scores")
@@ -125,6 +147,7 @@ export default function Round2TeamsPage() {
               graded={team.table_number in scoreByTable}
               score={scoreByTable[team.table_number]}
               href={`/round2/teams/${team.table_number}`}
+              rank={rankByTable[team.table_number]}
             />
           ))}
         </div>
