@@ -21,12 +21,20 @@ export default function WelcomePage() {
         </div>
         <EvaluatorPicker />
 
-        <Link
-          href="/admin"
-          className="touch-target mt-10 flex items-center rounded-full border border-lenovo-line px-5 text-sm font-medium text-lenovo-muted transition-colors hover:border-lenovo-navy hover:text-lenovo-navy"
-        >
-          Admin
-        </Link>
+        <div className="mt-10 flex items-center gap-3">
+          <Link
+            href="/admin"
+            className="touch-target flex items-center rounded-full border border-lenovo-line px-5 text-sm font-medium text-lenovo-muted transition-colors hover:border-lenovo-navy hover:text-lenovo-navy"
+          >
+            Admin
+          </Link>
+          <Link
+            href="/round2"
+            className="touch-target flex items-center rounded-full border border-lenovo-line px-5 text-sm font-medium text-lenovo-muted transition-colors hover:border-lenovo-navy hover:text-lenovo-navy"
+          >
+            Round 2
+          </Link>
+        </div>
       </main>
     </div>
   );

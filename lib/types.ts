@@ -12,6 +12,7 @@ export interface Team {
   project_link: string | null;
   pitch_night_marks: number | null;
   group_number: 1 | 2 | 3 | 4;
+  round2_qualified: boolean;
 }
 
 export interface Score {
@@ -33,7 +34,7 @@ export interface LeaderboardRow {
   team_name: string | null;
   project_title: string | null;
   project_theme: string | null;
-  group_number: 1 | 2 | 3 | 4;
+  group_number?: 1 | 2 | 3 | 4;
   evaluations_count: number;
   average_total: number | null;
   avg_theme_alignment: number | null;

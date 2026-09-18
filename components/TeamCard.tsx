@@ -5,14 +5,16 @@ export function TeamCard({
   team,
   graded,
   score,
+  href,
 }: {
   team: Team;
   graded: boolean;
   score?: number;
+  href?: string;
 }) {
   return (
     <Link
-      href={`/teams/${team.table_number}`}
+      href={href ?? `/teams/${team.table_number}`}
       className="group flex flex-col justify-between rounded-card border border-lenovo-line bg-white p-5 shadow-card transition-transform hover:-translate-y-0.5"
     >
       <div>

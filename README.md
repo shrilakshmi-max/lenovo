@@ -12,7 +12,10 @@ Lucknow.
   and scores first**, then loads the new file - there's no merge/preserve
   behavior. A separate "Clear all data" action on the same page wipes
   everything without needing a replacement file. Both require the admin
-  passcode and a confirmation prompt before running.
+  passcode and a confirmation prompt before running. Either one also wipes
+  round 2 (the `round2_qualified` flags and `round2_scores`), since it
+  deletes the `teams` rows they depend on - don't run these after round 2
+  has begun unless you mean to reset it too.
 - **Automatic grouping**: teams are sorted by table number ascending and
   split into 4 even groups on every import (`lib/csvImport.ts`).
 - **Evaluator selection that persists on-device** (`localStorage`, not a
@@ -26,8 +29,11 @@ Lucknow.
 - **Live leaderboard** (`/leaderboard`): ranks teams by average total score
   across all evaluators who have scored them, top 10 highlighted, refreshes
   every 15 seconds.
+- **Round 2** (`/round2`, linked from the welcome page): a separate scoring
+  round for the top 20 teams from the round 1 leaderboard, with its own
+  3-evaluator pool (Arvind, Utkarsh, Amit) and the same rubric. See below.
 
-## Evaluator groups
+## Evaluator groups (round 1)
 
 | Group | Evaluators |
 |---|---|
@@ -37,6 +43,43 @@ Lucknow.
 | 4 | Amanpreet, Ayush |
 
 Defined in `lib/evaluators.ts` - edit that file if names change.
+
+## Round 2
+
+Round 2 lives at `/round2` and is a second, independent scoring pass over
+the top 20 teams from the round 1 leaderboard, judged by a separate pool of
+3 evaluators - Arvind, Utkarsh, and Amit (`lib/round2.ts`) - each of whom
+sees and scores **all 20 teams** (no groups, unlike round 1).
+
+**Starting round 2** requires the admin passcode and can only be done
+**once**: an organizer opens `/round2`, enters the passcode, and taps
+"Begin Round 2". That calls `/api/round2/begin`, which takes the top 20
+table numbers from the `leaderboard` view (by average total score, ties
+broken by table number) and flags them `teams.round2_qualified = true`. If
+any team is already flagged, the endpoint refuses - there is no re-run or
+reset path built in, since re-selecting after some round 2 scores exist
+would silently strand those scores against teams no longer in the top 20.
+If you do need to restart round 2, manually run
+`update teams set round2_qualified = false` and `delete from round2_scores`
+in the Supabase SQL editor first.
+
+Because this is a one-time, hard-to-undo action, run it only once round 1
+judging is actually finished - whatever the leaderboard shows at the
+moment you click "Begin Round 2" is what gets locked in.
+
+Once round 2 has begun, every device visiting `/round2` goes straight to
+the evaluator picker (no passcode needed for that) - the passcode is only
+required to trigger the initial selection. `/round2/teams`,
+`/round2/teams/[tableNumber]`, and `/round2/leaderboard` mirror the round 1
+pages but read/write the separate `round2_scores` table and
+`round2_leaderboard` view, and only ever show the same 20 teams to all 3
+evaluators.
+
+If you're setting this up on an already-deployed database (not a fresh
+Supabase project), run
+[`supabase/migrations/002_round2.sql`](supabase/migrations/002_round2.sql)
+once in the SQL editor first - `supabase/schema.sql` already includes
+these pieces for new installs.
 
 ## One-time setup
 

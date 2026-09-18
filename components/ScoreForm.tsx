@@ -59,9 +59,13 @@ function Stepper({
 export function ScoreForm({
   tableNumber,
   evaluatorName,
+  scoresTable = "scores",
+  backHref = "/teams",
 }: {
   tableNumber: number;
   evaluatorName: string;
+  scoresTable?: "scores" | "round2_scores";
+  backHref?: string;
 }) {
   const router = useRouter();
   const [scores, setScores] = useState<Scores>(EMPTY);
@@ -74,7 +78,7 @@ export function ScoreForm({
     let cancelled = false;
     async function load() {
       const { data, error: fetchError } = await supabase
-        .from("scores")
+        .from(scoresTable)
         .select("*")
         .eq("table_number", tableNumber)
         .eq("evaluator_name", evaluatorName)
@@ -98,7 +102,7 @@ export function ScoreForm({
     return () => {
       cancelled = true;
     };
-  }, [tableNumber, evaluatorName]);
+  }, [tableNumber, evaluatorName, scoresTable]);
 
   const total =
     scores.theme_alignment +
@@ -109,7 +113,7 @@ export function ScoreForm({
   async function submit() {
     setSaving(true);
     setError(null);
-    const { error: upsertError } = await supabase.from("scores").upsert(
+    const { error: upsertError } = await supabase.from(scoresTable).upsert(
       {
         table_number: tableNumber,
         evaluator_name: evaluatorName,
@@ -124,7 +128,7 @@ export function ScoreForm({
       return;
     }
     setSavedAt(new Date().toISOString());
-    router.push("/teams");
+    router.push(backHref);
   }
 
   if (loading) {

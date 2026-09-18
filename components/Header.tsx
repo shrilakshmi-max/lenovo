@@ -5,8 +5,15 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "./Logo";
 import { clearEvaluator } from "@/lib/evaluators";
+import { clearRound2Evaluator } from "@/lib/round2";
 
-export function Header({ evaluatorName }: { evaluatorName?: string | null }) {
+export function Header({
+  evaluatorName,
+  mode = "round1",
+}: {
+  evaluatorName?: string | null;
+  mode?: "round1" | "round2";
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -15,25 +22,37 @@ export function Header({ evaluatorName }: { evaluatorName?: string | null }) {
     setMenuOpen(false);
   }, [pathname]);
 
+  const isRound2 = mode === "round2";
+  const homeHref = isRound2 ? "/round2" : "/";
+  const teamsHref = isRound2 ? "/round2/teams" : "/teams";
+  const leaderboardHref = isRound2 ? "/round2/leaderboard" : "/leaderboard";
+
   const links = evaluatorName
     ? [
-        { href: "/teams", label: "My Teams" },
-        { href: "/leaderboard", label: "Leaderboard" },
+        { href: teamsHref, label: isRound2 ? "Round 2 Teams" : "My Teams" },
+        {
+          href: leaderboardHref,
+          label: isRound2 ? "Round 2 Leaderboard" : "Leaderboard",
+        },
       ]
-    : [{ href: "/leaderboard", label: "Leaderboard" }];
+    : [{ href: leaderboardHref, label: isRound2 ? "Round 2 Leaderboard" : "Leaderboard" }];
 
   const isActive = (href: string) =>
     pathname === href || pathname?.startsWith(href + "/");
 
   function switchEvaluator() {
-    clearEvaluator();
-    router.push("/");
+    if (isRound2) {
+      clearRound2Evaluator();
+    } else {
+      clearEvaluator();
+    }
+    router.push(homeHref);
   }
 
   return (
     <header className="sticky top-0 z-30 border-b border-black/10 bg-lenovo-navy">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-        <Link href="/" className="shrink-0">
+        <Link href={homeHref} className="shrink-0">
           <Logo variant="light" />
         </Link>
 
@@ -56,7 +75,7 @@ export function Header({ evaluatorName }: { evaluatorName?: string | null }) {
             <>
               <div className="ml-1 hidden items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 sm:flex">
                 <span className="text-xs uppercase tracking-wide text-white/60">
-                  Evaluator
+                  {isRound2 ? "Round 2 Evaluator" : "Evaluator"}
                 </span>
                 <span className="text-sm font-semibold text-white">
                   {evaluatorName}
@@ -122,7 +141,7 @@ export function Header({ evaluatorName }: { evaluatorName?: string | null }) {
             <div className="mt-3 flex items-center justify-between rounded-lg bg-white/10 px-3 py-2.5">
               <div>
                 <p className="text-xs uppercase tracking-wide text-white/60">
-                  Evaluator
+                  {isRound2 ? "Round 2 Evaluator" : "Evaluator"}
                 </p>
                 <p className="text-sm font-semibold text-white">{evaluatorName}</p>
               </div>
