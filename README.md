@@ -112,7 +112,7 @@ its own 8 evaluators (`lib/pune.ts`):
 
 | Group | Evaluators |
 |---|---|
-| 1 | Paulomi, Amit |
+| 1 | Poulamee, Amit |
 | 2 | Yogesh, Rushikesh |
 | 3 | Mayuresh, Tushar |
 | 4 | Pramay, Utkarsh |
@@ -122,11 +122,41 @@ It reuses the same `ADMIN_PASSWORD` as UP's `/admin`. Importing a CSV at
 wipe-and-replace of `pune_teams`/`pune_scores` only, group assignments
 recalculated from the new table numbers.
 
-If you're setting this up on an already-deployed database, run
-[`supabase/migrations/003_pune.sql`](supabase/migrations/003_pune.sql) once
-in the SQL editor first - `supabase/schema.sql` already includes these
-pieces for new installs. This migration only creates new tables/views; it
-does not alter `teams`, `scores`, or `round2_scores` in any way.
+If you're setting this up on an already-deployed database, run these once
+in the SQL editor, in order - `supabase/schema.sql` already includes all of
+this for new installs, and none of it alters `teams`, `scores`, or
+`round2_scores`:
+
+1. [`supabase/migrations/003_pune.sql`](supabase/migrations/003_pune.sql) - `pune_teams`, `pune_scores`, `pune_leaderboard`
+2. [`supabase/migrations/004_pune_roster.sql`](supabase/migrations/004_pune_roster.sql) - the pre-registration roster table
+3. [`supabase/migrations/005_pune_register_function.sql`](supabase/migrations/005_pune_register_function.sql) - the atomic registration function
+4. [`supabase/migrations/006_score_comments.sql`](supabase/migrations/006_score_comments.sql) - optional evaluator comments (all three scoring tables)
+5. [`supabase/migrations/007_pune_spot_registration.sql`](supabase/migrations/007_pune_spot_registration.sql) - spot/walk-in team registration (see below)
+
+### Registration desk (`/pune/register`)
+
+Desk volunteers look a team up by Team ID (searched against `pune_roster`,
+loaded ahead of time via the roster import on `/pune/admin`) and press
+Register to get an assigned table number, evaluator group, and a reminder
+of which theme placard to hand them - no passcode needed, since this is
+meant for fast, repeated use during check-in.
+
+**Spot registration**: if a team never made it onto the roster, "Can't
+find them? Add a new team" opens a short form (leader name and project
+theme are the only required fields) and registers them on the spot. A
+unique Team ID is generated automatically in the form `W001`, `W002`, ...
+(the `W` prefix keeps these unambiguously distinct from the roster's own
+IDs). Under the hood this creates both the `pune_roster` row (already
+marked registered, for the same audit trail as normal registrations) and
+the `pune_teams` row in one step.
+
+Both registration paths - existing roster and spot/new - share the same
+table-and-group assignment logic and the same advisory lock
+(`register_pune_team` / `register_new_pune_team`, both calling the shared
+`assign_pune_table` helper in
+[`supabase/migrations/007_pune_spot_registration.sql`](supabase/migrations/007_pune_spot_registration.sql)),
+so two desks registering teams - of either kind - at the same instant can
+never collide on a table number or the round-robin group count.
 
 ## One-time setup
 

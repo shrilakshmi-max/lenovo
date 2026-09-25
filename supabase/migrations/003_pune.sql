@@ -24,7 +24,7 @@ create table if not exists pune_scores (
   id uuid primary key default gen_random_uuid(),
   table_number integer not null references pune_teams(table_number) on delete cascade,
   evaluator_name text not null check (
-    evaluator_name in ('Paulomi', 'Amit', 'Yogesh', 'Rushikesh', 'Mayuresh', 'Tushar', 'Pramay', 'Utkarsh')
+    evaluator_name in ('Poulamee', 'Amit', 'Yogesh', 'Rushikesh', 'Mayuresh', 'Tushar', 'Pramay', 'Utkarsh')
   ),
   theme_alignment smallint not null check (theme_alignment between 1 and 10),
   innovation smallint not null check (innovation between 1 and 10),

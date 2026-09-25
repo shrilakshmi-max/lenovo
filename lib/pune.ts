@@ -1,5 +1,5 @@
 export type PuneEvaluatorName =
-  | "Paulomi"
+  | "Poulamee"
   | "Amit"
   | "Yogesh"
   | "Rushikesh"
@@ -15,7 +15,7 @@ export interface PuneEvaluatorGroup {
 }
 
 export const PUNE_EVALUATOR_GROUPS: PuneEvaluatorGroup[] = [
-  { groupNumber: 1, label: "Group 1", evaluators: ["Paulomi", "Amit"] },
+  { groupNumber: 1, label: "Group 1", evaluators: ["Poulamee", "Amit"] },
   { groupNumber: 2, label: "Group 2", evaluators: ["Yogesh", "Rushikesh"] },
   { groupNumber: 3, label: "Group 3", evaluators: ["Mayuresh", "Tushar"] },
   { groupNumber: 4, label: "Group 4", evaluators: ["Pramay", "Utkarsh"] },

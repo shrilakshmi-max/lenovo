@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
-import { FloatingLogo } from "@/components/FloatingLogo";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -24,7 +23,6 @@ export default function RootLayout({
     <html lang="en" className={poppins.variable}>
       <body className="min-h-screen bg-lenovo-paper font-sans text-lenovo-ink antialiased">
         {children}
-        <FloatingLogo />
       </body>
     </html>
   );

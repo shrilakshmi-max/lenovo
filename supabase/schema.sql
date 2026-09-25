@@ -185,7 +185,7 @@ create table if not exists pune_scores (
   id uuid primary key default gen_random_uuid(),
   table_number integer not null references pune_teams(table_number) on delete cascade,
   evaluator_name text not null check (
-    evaluator_name in ('Paulomi', 'Amit', 'Yogesh', 'Rushikesh', 'Mayuresh', 'Tushar', 'Pramay', 'Utkarsh')
+    evaluator_name in ('Poulamee', 'Amit', 'Yogesh', 'Rushikesh', 'Mayuresh', 'Tushar', 'Pramay', 'Utkarsh')
   ),
   theme_alignment smallint not null check (theme_alignment between 1 and 10),
   innovation smallint not null check (innovation between 1 and 10),
@@ -287,55 +287,24 @@ alter table pune_roster enable row level security;
 drop policy if exists "public read pune roster" on pune_roster;
 create policy "public read pune roster" on pune_roster for select using (true);
 
--- Atomically assigns a table number + evaluator group to a roster team and
--- creates its pune_teams row. Called from /api/pune/register via the
--- service-role client (never directly from the browser).
---
--- Group assignment: simple round robin over check-in order (1st team
--- overall -> group 1, 2nd -> group 2, 3rd -> group 3, 4th -> group 4, 5th
--- -> group 1 again, ...).
+-- Shared table-assignment logic, used by both register_pune_team (existing
+-- roster entries) and register_new_pune_team (spot/walk-in registration).
 --
 -- Table assignment within a group: solo teams (no second member) prefer
 -- that group's small reserved solo pool; two-person teams prefer the
 -- larger regular pool. If a team's preferred pool is exhausted, it spills
 -- into the other pool for that group instead of blocking registration.
---
--- pg_advisory_xact_lock serializes every call against every other call
--- (held for the duration of the calling transaction, released
--- automatically at commit/rollback), so two desks registering teams at
--- the same instant can never be assigned the same table or miscount the
--- round-robin position.
-create or replace function register_pune_team(p_team_id text)
-returns table (assigned_table_number integer, assigned_group_number smallint)
+create or replace function assign_pune_table(p_group smallint, p_is_solo boolean)
+returns integer
 language plpgsql
 as $$
 declare
-  v_roster pune_roster%rowtype;
-  v_position integer;
-  v_group smallint;
-  v_is_solo boolean;
-  v_table integer;
   v_regular integer[];
   v_solo integer[];
   v_num integer;
+  v_table integer;
 begin
-  perform pg_advisory_xact_lock(hashtext('pune_register'));
-
-  select * into v_roster from pune_roster where team_id = p_team_id;
-  if not found then
-    raise exception 'No roster entry for Team ID %', p_team_id using errcode = 'P0002';
-  end if;
-  if v_roster.registered then
-    raise exception 'Team % is already registered', p_team_id using errcode = '23505';
-  end if;
-
-  select count(*) into v_position from pune_teams;
-  v_position := v_position + 1;
-  v_group := ((v_position - 1) % 4) + 1;
-
-  v_is_solo := (v_roster.member2_name is null or btrim(v_roster.member2_name) = '');
-
-  case v_group
+  case p_group
     when 1 then
       v_regular := array[1,2,3,4,5,6,7,8,9,10,11,12,13,14];
       v_solo := array[15,16,17];
@@ -352,7 +321,7 @@ begin
 
   v_table := null;
 
-  if v_is_solo then
+  if p_is_solo then
     foreach v_num in array v_solo loop
       if not exists (select 1 from pune_teams where table_number = v_num) then
         v_table := v_num;
@@ -385,8 +354,53 @@ begin
   end if;
 
   if v_table is null then
-    raise exception 'Group % is completely full - no table numbers left', v_group using errcode = 'P0001';
+    raise exception 'Group % is completely full - no table numbers left', p_group using errcode = 'P0001';
   end if;
+
+  return v_table;
+end;
+$$;
+
+-- Atomically assigns a table number + evaluator group to a roster team and
+-- creates its pune_teams row. Called from /api/pune/register via the
+-- service-role client (never directly from the browser).
+--
+-- Group assignment: simple round robin over check-in order (1st team
+-- overall -> group 1, 2nd -> group 2, 3rd -> group 3, 4th -> group 4, 5th
+-- -> group 1 again, ...).
+--
+-- pg_advisory_xact_lock serializes every call against every other call to
+-- this function AND register_new_pune_team, held for the duration of the
+-- calling transaction, so two desks registering teams (existing roster or
+-- brand new) at the same instant can never be assigned the same table or
+-- miscount the round-robin position.
+create or replace function register_pune_team(p_team_id text)
+returns table (assigned_table_number integer, assigned_group_number smallint)
+language plpgsql
+as $$
+declare
+  v_roster pune_roster%rowtype;
+  v_position integer;
+  v_group smallint;
+  v_is_solo boolean;
+  v_table integer;
+begin
+  perform pg_advisory_xact_lock(hashtext('pune_register'));
+
+  select * into v_roster from pune_roster where team_id = p_team_id;
+  if not found then
+    raise exception 'No roster entry for Team ID %', p_team_id using errcode = 'P0002';
+  end if;
+  if v_roster.registered then
+    raise exception 'Team % is already registered', p_team_id using errcode = '23505';
+  end if;
+
+  select count(*) into v_position from pune_teams;
+  v_position := v_position + 1;
+  v_group := ((v_position - 1) % 4) + 1;
+
+  v_is_solo := (v_roster.member2_name is null or btrim(v_roster.member2_name) = '');
+  v_table := assign_pune_table(v_group, v_is_solo);
 
   insert into pune_teams (
     table_number, team_id, team_name, leader_name, member2_name,
@@ -403,5 +417,74 @@ begin
   where team_id = p_team_id;
 
   return query select v_table, v_group;
+end;
+$$;
+
+-- Spot/walk-in registration: a team that was never on the pre-uploaded
+-- roster. Generates a unique Team ID (format "W001", "W002", ... - the "W"
+-- prefix keeps these unambiguously distinct from the roster's own IDs),
+-- creates its pune_roster row (already marked registered, for the same
+-- audit trail roster-based registrations get), and assigns a table number
+-- + group exactly like register_pune_team. Shares the same advisory lock
+-- name, so it's serialized against register_pune_team too.
+create or replace function register_new_pune_team(
+  p_team_name text,
+  p_leader_name text,
+  p_member2_name text,
+  p_leader_email text,
+  p_leader_contact text,
+  p_attendees text,
+  p_project_title text,
+  p_project_theme text,
+  p_project_link text
+)
+returns table (assigned_team_id text, assigned_table_number integer, assigned_group_number smallint)
+language plpgsql
+as $$
+declare
+  v_position integer;
+  v_group smallint;
+  v_is_solo boolean;
+  v_table integer;
+  v_team_id text;
+  v_next_seq integer;
+begin
+  perform pg_advisory_xact_lock(hashtext('pune_register'));
+
+  select coalesce(max(substring(team_id from 2)::integer), 0) + 1
+  into v_next_seq
+  from pune_roster
+  where team_id ~ '^W[0-9]+$';
+
+  v_team_id := 'W' || lpad(v_next_seq::text, 3, '0');
+
+  select count(*) into v_position from pune_teams;
+  v_position := v_position + 1;
+  v_group := ((v_position - 1) % 4) + 1;
+
+  v_is_solo := (p_member2_name is null or btrim(p_member2_name) = '');
+  v_table := assign_pune_table(v_group, v_is_solo);
+
+  insert into pune_roster (
+    team_id, team_name, leader_name, member2_name, leader_email,
+    leader_contact, attendees, project_title, project_theme, project_link,
+    registered, registered_table_number
+  ) values (
+    v_team_id, p_team_name, p_leader_name, p_member2_name, p_leader_email,
+    p_leader_contact, p_attendees, p_project_title, p_project_theme, p_project_link,
+    true, v_table
+  );
+
+  insert into pune_teams (
+    table_number, team_id, team_name, leader_name, member2_name,
+    leader_email, leader_contact, attendees, project_title, project_theme,
+    project_link, group_number
+  ) values (
+    v_table, v_team_id, p_team_name, p_leader_name, p_member2_name,
+    p_leader_email, p_leader_contact, p_attendees, p_project_title, p_project_theme,
+    p_project_link, v_group
+  );
+
+  return query select v_team_id, v_table, v_group;
 end;
 $$;
