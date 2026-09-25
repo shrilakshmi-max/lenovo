@@ -52,7 +52,7 @@ export default function LeaderboardPage() {
         </div>
 
         {error ? (
-          <p className="rounded-card border border-lenovo-red/30 bg-lenovo-red/5 p-4 text-sm text-lenovo-red">
+          <p className="rounded-card border border-lenovo-maroon/30 bg-lenovo-maroon/5 p-4 text-sm text-lenovo-maroon">
             Could not load the leaderboard: {error}
           </p>
         ) : null}

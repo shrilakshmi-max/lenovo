@@ -1,5 +1,11 @@
-No logo image is used. components/Logo.tsx renders "Lenovo" as styled
-text (in the brand red) next to "LEAP HACKATHON", instead of a logo file.
+lenovo-logo.png - the official Lenovo logo (red badge, provided by the
+organizer). Used by components/FloatingLogo.tsx, which shows it as a
+small vertical tab fixed to the bottom-right corner on every page.
 
-If you want to switch back to an image logo later, add the file here and
-update the `src` in components/Logo.tsx to point at it.
+The header itself still uses text, not this image - components/Logo.tsx
+renders "Lenovo" as styled text (in the brand red) next to "LEAP
+HACKATHON".
+
+To replace the floating logo, drop a new file at this same path (any
+raster or vector format works - just update the `src` in
+components/FloatingLogo.tsx if the filename or extension changes).

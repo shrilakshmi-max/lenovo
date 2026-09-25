@@ -10,7 +10,7 @@ export function RubricReference() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="touch-target rounded-full border border-lenovo-navy px-4 text-sm font-medium text-lenovo-navy hover:bg-lenovo-navy hover:text-white"
+        className="touch-target rounded-full border border-lenovo-red px-4 text-sm font-medium text-lenovo-red hover:bg-lenovo-red hover:text-white"
       >
         View rubric
       </button>
@@ -39,7 +39,7 @@ export function RubricReference() {
             <div className="space-y-5">
               {RUBRIC.map((criterion) => (
                 <div key={criterion.key} className="rounded-card border border-lenovo-line p-4">
-                  <h3 className="font-display text-sm font-semibold text-lenovo-navy">
+                  <h3 className="font-display text-sm font-semibold text-lenovo-maroon">
                     {criterion.title}
                   </h3>
                   <p className="mt-1 text-sm text-lenovo-muted">{criterion.prompt}</p>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
+import { FloatingLogo } from "@/components/FloatingLogo";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -10,8 +11,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "LEAP Hackathon 2026 - Judging",
-  description: "Evaluator scoring console for Lenovo LEAP Hackathon 2026, Lucknow.",
+  title: "LEAP Hackathon - Judging",
+  description: "Evaluator scoring console for the Lenovo LEAP Hackathon.",
 };
 
 export default function RootLayout({
@@ -23,6 +24,7 @@ export default function RootLayout({
     <html lang="en" className={poppins.variable}>
       <body className="min-h-screen bg-lenovo-paper font-sans text-lenovo-ink antialiased">
         {children}
+        <FloatingLogo />
       </body>
     </html>
   );

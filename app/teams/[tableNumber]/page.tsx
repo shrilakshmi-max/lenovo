@@ -40,7 +40,7 @@ export default function TeamGradingPage() {
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6">
         <Link
           href="/teams"
-          className="mb-4 inline-block text-sm font-medium text-lenovo-muted hover:text-lenovo-navy"
+          className="mb-4 inline-block text-sm font-medium text-lenovo-muted hover:text-lenovo-red"
         >
           &larr; Back to my teams
         </Link>
@@ -48,14 +48,14 @@ export default function TeamGradingPage() {
         {team === undefined ? (
           <p className="text-sm text-lenovo-muted">Loading team...</p>
         ) : team === null ? (
-          <p className="rounded-card border border-lenovo-red/30 bg-lenovo-red/5 p-4 text-sm text-lenovo-red">
+          <p className="rounded-card border border-lenovo-maroon/30 bg-lenovo-maroon/5 p-4 text-sm text-lenovo-maroon">
             No team found for table {tableNumber}.
           </p>
         ) : (
           <>
             <div className="mb-6 rounded-card border border-lenovo-line bg-white p-5 shadow-card">
               <div className="mb-2 flex items-center justify-between">
-                <span className="rounded-full bg-lenovo-navy px-2.5 py-1 text-xs font-semibold text-white">
+                <span className="rounded-full bg-lenovo-red px-2.5 py-1 text-xs font-semibold text-white">
                   Table {team.table_number}
                 </span>
                 <RubricReference />

@@ -12,7 +12,10 @@ export interface Team {
   project_link: string | null;
   pitch_night_marks: number | null;
   group_number: 1 | 2 | 3 | 4;
-  round2_qualified: boolean;
+  // Only present on rows from the "teams" table (round 1 / UP). Rows from
+  // "pune_teams" don't have this column - it's optional so the same Team
+  // type can represent both.
+  round2_qualified?: boolean;
 }
 
 export interface Score {
@@ -24,6 +27,7 @@ export interface Score {
   technical_implementation: number;
   scalability: number;
   total: number;
+  comment: string | null;
   created_at: string;
   updated_at: string;
 }

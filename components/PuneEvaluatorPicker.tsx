@@ -3,35 +3,35 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  EVALUATOR_GROUPS,
-  EvaluatorName,
-  loadEvaluator,
-  saveEvaluator,
-} from "@/lib/evaluators";
+  PUNE_EVALUATOR_GROUPS,
+  PuneEvaluatorName,
+  loadPuneEvaluator,
+  savePuneEvaluator,
+} from "@/lib/pune";
 
-export function EvaluatorPicker() {
+export function PuneEvaluatorPicker() {
   const router = useRouter();
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    const existing = loadEvaluator();
+    const existing = loadPuneEvaluator();
     if (existing) {
-      router.replace("/teams");
+      router.replace("/pune/teams");
       return;
     }
     setChecking(false);
   }, [router]);
 
-  function choose(name: EvaluatorName) {
-    saveEvaluator(name);
-    router.push("/teams");
+  function choose(name: PuneEvaluatorName) {
+    savePuneEvaluator(name);
+    router.push("/pune/teams");
   }
 
   if (checking) return null;
 
   return (
     <div className="mx-auto grid w-full max-w-3xl gap-4 sm:grid-cols-2">
-      {EVALUATOR_GROUPS.map((group) => (
+      {PUNE_EVALUATOR_GROUPS.map((group) => (
         <div
           key={group.groupNumber}
           className="rounded-card border border-lenovo-line bg-white p-5 shadow-card"

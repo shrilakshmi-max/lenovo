@@ -3,14 +3,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { Header } from "@/components/Header";
 import { TeamCard } from "@/components/TeamCard";
-import { useEvaluator } from "@/lib/useEvaluator";
-import { groupForEvaluator } from "@/lib/evaluators";
+import { usePuneEvaluator } from "@/lib/usePuneEvaluator";
+import { puneGroupForEvaluator } from "@/lib/pune";
 import { supabase } from "@/lib/supabaseClient";
 import { Team } from "@/lib/types";
 
-export default function TeamsPage() {
-  const evaluatorName = useEvaluator();
-  const group = evaluatorName ? groupForEvaluator(evaluatorName) : undefined;
+export default function PuneTeamsPage() {
+  const evaluatorName = usePuneEvaluator();
+  const group = evaluatorName ? puneGroupForEvaluator(evaluatorName) : undefined;
 
   const [teams, setTeams] = useState<Team[] | null>(null);
   const [scoreByTable, setScoreByTable] = useState<Record<number, number>>({});
@@ -23,7 +23,7 @@ export default function TeamsPage() {
 
     async function load() {
       const { data: teamRows, error: teamError } = await supabase
-        .from("teams")
+        .from("pune_teams")
         .select("*")
         .eq("group_number", group!.groupNumber)
         .order("table_number", { ascending: true });
@@ -36,7 +36,7 @@ export default function TeamsPage() {
       setTeams(teamRows as Team[]);
 
       const { data: scoreRows, error: scoreError } = await supabase
-        .from("scores")
+        .from("pune_scores")
         .select("table_number, total")
         .eq("evaluator_name", evaluatorName);
 
@@ -69,7 +69,7 @@ export default function TeamsPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header evaluatorName={evaluatorName} />
+      <Header evaluatorName={evaluatorName} mode="pune" />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
         <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
@@ -116,7 +116,7 @@ export default function TeamsPage() {
         {teams && teams.length === 0 ? (
           <p className="rounded-card border border-dashed border-lenovo-line p-8 text-center text-sm text-lenovo-muted">
             No teams have been imported yet. Ask an organizer to upload the
-            team list from the Admin page.
+            team list from the Pune Admin page.
           </p>
         ) : null}
 
@@ -126,6 +126,7 @@ export default function TeamsPage() {
               key={team.table_number}
               team={team}
               graded={team.table_number in scoreByTable}
+              href={`/pune/teams/${team.table_number}`}
             />
           ))}
         </div>

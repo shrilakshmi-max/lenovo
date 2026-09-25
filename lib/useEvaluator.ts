@@ -18,7 +18,7 @@ export function useEvaluator(required = true) {
     const existing = loadEvaluator();
     setName(existing);
     if (required && !existing) {
-      router.replace("/");
+      router.replace("/up");
     }
   }, [required, router]);
 

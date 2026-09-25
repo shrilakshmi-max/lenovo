@@ -113,8 +113,8 @@ export default function Round2TeamsPage() {
                 onClick={() => setFilter(f)}
                 className={`touch-target rounded-full border px-4 text-sm font-medium capitalize transition-colors ${
                   filter === f
-                    ? "border-lenovo-navy bg-lenovo-navy text-white"
-                    : "border-lenovo-line bg-white text-lenovo-muted hover:border-lenovo-navy"
+                    ? "border-lenovo-red bg-lenovo-red text-white"
+                    : "border-lenovo-line bg-white text-lenovo-muted hover:border-lenovo-red"
                 }`}
               >
                 {f}
@@ -124,7 +124,7 @@ export default function Round2TeamsPage() {
         </div>
 
         {error ? (
-          <p className="rounded-card border border-lenovo-red/30 bg-lenovo-red/5 p-4 text-sm text-lenovo-red">
+          <p className="rounded-card border border-lenovo-maroon/30 bg-lenovo-maroon/5 p-4 text-sm text-lenovo-maroon">
             Could not load teams: {error}
           </p>
         ) : null}
@@ -145,7 +145,6 @@ export default function Round2TeamsPage() {
               key={team.table_number}
               team={team}
               graded={team.table_number in scoreByTable}
-              score={scoreByTable[team.table_number]}
               href={`/round2/teams/${team.table_number}`}
               rank={rankByTable[team.table_number]}
             />

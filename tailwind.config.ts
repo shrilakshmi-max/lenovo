@@ -11,10 +11,9 @@ const config: Config = {
         lenovo: {
           red: "#E2231A",
           "red-dark": "#B01810",
-          navy: "#0A1F44",
-          "navy-deep": "#060F26",
           maroon: "#6E1423",
           purple: "#3B1F4F",
+          "purple-dark": "#28152F",
           success: "#1D7A46",
           ink: "#101014",
           paper: "#FAFAFA",

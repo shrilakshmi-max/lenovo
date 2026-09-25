@@ -4,13 +4,11 @@ import { Team } from "@/lib/types";
 export function TeamCard({
   team,
   graded,
-  score,
   href,
   rank,
 }: {
   team: Team;
   graded: boolean;
-  score?: number;
   href?: string;
   rank?: number;
 }) {
@@ -23,20 +21,20 @@ export function TeamCard({
         <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             {rank ? (
-              <span className="rounded-full bg-lenovo-red px-2.5 py-1 text-xs font-semibold text-white">
+              <span className="rounded-full bg-lenovo-maroon px-2.5 py-1 text-xs font-semibold text-white">
                 #{rank}
               </span>
             ) : null}
-            <span className="rounded-full bg-lenovo-navy px-2.5 py-1 text-xs font-semibold text-white">
+            <span className="rounded-full bg-lenovo-red px-2.5 py-1 text-xs font-semibold text-white">
               Table {team.table_number}
             </span>
           </div>
           {graded ? (
             <span className="rounded-full bg-lenovo-success/10 px-2.5 py-1 text-xs font-semibold text-lenovo-success">
-              Graded - {score}/40
+              Evaluated
             </span>
           ) : (
-            <span className="rounded-full bg-lenovo-red/10 px-2.5 py-1 text-xs font-semibold text-lenovo-red">
+            <span className="rounded-full bg-lenovo-maroon/10 px-2.5 py-1 text-xs font-semibold text-lenovo-maroon">
               Pending
             </span>
           )}

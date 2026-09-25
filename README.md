@@ -1,39 +1,56 @@
-# LEAP Hackathon 2026 - Judging App
+# LEAP Hackathon - Judging App
 
 Next.js 14 (App Router) + Supabase app for evaluators to score teams against
-the rubric and see a live leaderboard, built for Lenovo LEAP Hackathon 2026,
-Lucknow.
+the rubric and see a live leaderboard, built for the Lenovo LEAP Hackathon.
+
+The app now hosts two independent hackathons. **`/` (the root URL) is Pune -
+the current, active event.** UP (Lucknow) still runs exactly as before, just
+moved to `/up` and no longer linked from the main UI, since that event is
+over. See [Pune](#pune-a-separate-hackathon) and [UP](#up-lucknow---hidden-from-the-ui)
+below for details on each.
 
 ## What's included
 
-- **Team database import** (`/admin`, linked from an "Admin" button on the
-  welcome page): upload the team-list CSV (same column layout as the source
-  sheet) to reset the database. Every import **deletes all existing teams
-  and scores first**, then loads the new file - there's no merge/preserve
-  behavior. A separate "Clear all data" action on the same page wipes
-  everything without needing a replacement file. Both require the admin
-  passcode and a confirmation prompt before running. Either one also wipes
-  round 2 (the `round2_qualified` flags and `round2_scores`), since it
-  deletes the `teams` rows they depend on - don't run these after round 2
-  has begun unless you mean to reset it too.
+- **Team database import** (`/admin` for UP, `/pune/admin` for Pune): upload
+  the team-list CSV (same column layout as the source sheet) to reset that
+  event's database. Every import **deletes all existing teams and scores
+  for that event first**, then loads the new file - there's no
+  merge/preserve behavior. A separate "Clear all data" action on the same
+  page wipes everything without needing a replacement file. Both require
+  the admin passcode and a confirmation prompt before running. On UP,
+  either action also wipes round 2 (the `round2_qualified` flags and
+  `round2_scores`), since it deletes the `teams` rows they depend on.
 - **Automatic grouping**: teams are sorted by table number ascending and
   split into 4 even groups on every import (`lib/csvImport.ts`).
 - **Evaluator selection that persists on-device** (`localStorage`, not a
-  cookie/account) - each of the 8 named evaluators sees only their group's
-  teams from then on, on that device, until they tap "Switch".
-- **Rubric-based scoring** (`/teams/[tableNumber]`): Theme Alignment,
-  Innovation, Technical Implementation, Scalability, each 1-10, with the
-  full rubric text available in a "View rubric" panel. Submitting writes
-  straight to Supabase; re-opening a team you already scored preloads your
-  previous numbers so you can edit them.
-- **Live leaderboard** (`/leaderboard`): ranks teams by average total score
-  across all evaluators who have scored them, top 10 highlighted, refreshes
-  every 15 seconds.
-- **Round 2** (`/round2`, linked from the welcome page): a separate scoring
-  round for the top 20 teams from the round 1 leaderboard, with its own
-  3-evaluator pool (Arvind, Utkarsh, Amit) and the same rubric. See below.
+  cookie/account) - each named evaluator sees only their group's teams from
+  then on, on that device, until they tap "Switch".
+- **Rubric-based scoring** (`/teams/[tableNumber]` for UP,
+  `/pune/teams/[tableNumber]` for Pune): Theme Alignment, Innovation,
+  Technical Implementation, Scalability, each 1-10, with the full rubric
+  text available in a "View rubric" panel. Submitting writes straight to
+  Supabase; re-opening a team you already scored preloads your previous
+  numbers so you can edit them.
+- **Live leaderboard** (`/leaderboard` for UP, `/pune/leaderboard` for
+  Pune): ranks teams by average total score across all evaluators who have
+  scored them, top 10 highlighted, refreshes every 15 seconds.
+- **Round 2** (`/round2`, UP only, not linked anywhere in the UI - see
+  below): a separate scoring round for the top 20 teams from the UP
+  leaderboard, with its own 3-evaluator pool (Arvind, Utkarsh, Amit) and
+  the same rubric. Wasn't used in Lucknow; the code is dormant but intact
+  in case a future event wants it.
+- **Pune** (`/`, the default page): a second, fully
+  independent hackathon in the same app - separate teams, scores,
+  evaluators, and admin import, sharing nothing with UP's data. See below.
 
-## Evaluator groups (round 1)
+## UP (Lucknow) - hidden from the UI
+
+UP's welcome page moved from `/` to **`/up`** when Pune became the default,
+since the Lucknow event is over. Nothing else about it changed - `/teams`,
+`/teams/[tableNumber]`, `/leaderboard`, and `/admin` are all exactly where
+they were, still reading/writing the same `teams`/`scores` tables. `/up`
+just isn't linked from anywhere in the UI anymore; bookmark it directly if
+you need it (e.g. to re-check UP's leaderboard, or re-run `/admin`).
 
 | Group | Evaluators |
 |---|---|
@@ -80,6 +97,36 @@ Supabase project), run
 [`supabase/migrations/002_round2.sql`](supabase/migrations/002_round2.sql)
 once in the SQL editor first - `supabase/schema.sql` already includes
 these pieces for new installs.
+
+## Pune (a separate hackathon)
+
+`/pune` is a second, fully independent hackathon running in this same app,
+for when a different event needs the same tool. It does **not** share any
+data with UP - separate tables (`pune_teams`, `pune_scores`), a separate
+evaluator pool, and its own admin import/clear flow at `/pune/admin`.
+Nothing about importing, clearing, or scoring Pune data can affect the UP
+`teams`/`scores`/`round2_scores` tables, and vice versa.
+
+Pune uses the same rubric and the same 4-groups-of-2 structure as UP, with
+its own 8 evaluators (`lib/pune.ts`):
+
+| Group | Evaluators |
+|---|---|
+| 1 | Paulomi, Amit |
+| 2 | Yogesh, Rushikesh |
+| 3 | Mayuresh, Tushar |
+| 4 | Pramay, Utkarsh |
+
+It reuses the same `ADMIN_PASSWORD` as UP's `/admin`. Importing a CSV at
+`/pune/admin` works exactly like UP's `/admin`: same column format, full
+wipe-and-replace of `pune_teams`/`pune_scores` only, group assignments
+recalculated from the new table numbers.
+
+If you're setting this up on an already-deployed database, run
+[`supabase/migrations/003_pune.sql`](supabase/migrations/003_pune.sql) once
+in the SQL editor first - `supabase/schema.sql` already includes these
+pieces for new installs. This migration only creates new tables/views; it
+does not alter `teams`, `scores`, or `round2_scores` in any way.
 
 ## One-time setup
 

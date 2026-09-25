@@ -138,7 +138,7 @@ export default function AdminPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="touch-target w-full max-w-xs rounded-lg border border-lenovo-line px-3 text-base focus:border-lenovo-navy focus:outline-none"
+            className="touch-target w-full max-w-xs rounded-lg border border-lenovo-line px-3 text-base focus:border-lenovo-red focus:outline-none"
             placeholder="Enter passcode"
           />
           <p className="mt-2 text-xs text-lenovo-muted">
@@ -164,7 +164,7 @@ export default function AdminPage() {
                 type="file"
                 accept=".csv,text/csv"
                 onChange={onFileSelected}
-                className="block w-full text-sm text-lenovo-muted file:mr-3 file:touch-target file:rounded-full file:border-0 file:bg-lenovo-navy file:px-4 file:text-sm file:font-medium file:text-white hover:file:bg-lenovo-navy-deep"
+                className="block w-full text-sm text-lenovo-muted file:mr-3 file:touch-target file:rounded-full file:border-0 file:bg-lenovo-red file:px-4 file:text-sm file:font-medium file:text-white hover:file:bg-lenovo-red-dark"
               />
               {fileName ? (
                 <p className="mt-1 text-xs text-lenovo-muted">Selected: {fileName}</p>
@@ -172,7 +172,7 @@ export default function AdminPage() {
             </div>
 
             {importError ? (
-              <p className="mt-3 rounded-card border border-lenovo-red/30 bg-lenovo-red/5 p-3 text-sm text-lenovo-red">
+              <p className="mt-3 rounded-card border border-lenovo-maroon/30 bg-lenovo-maroon/5 p-3 text-sm text-lenovo-maroon">
                 {importError}
               </p>
             ) : null}
@@ -218,7 +218,7 @@ export default function AdminPage() {
             </p>
 
             {clearError ? (
-              <p className="mt-3 rounded-card border border-lenovo-red/30 bg-lenovo-red/5 p-3 text-sm text-lenovo-red">
+              <p className="mt-3 rounded-card border border-lenovo-maroon/30 bg-lenovo-maroon/5 p-3 text-sm text-lenovo-maroon">
                 {clearError}
               </p>
             ) : null}

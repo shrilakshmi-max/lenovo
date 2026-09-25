@@ -100,12 +100,12 @@ export default function Round2Page() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="touch-target w-full rounded-lg border border-lenovo-line px-3 text-base focus:border-lenovo-navy focus:outline-none"
+              className="touch-target w-full rounded-lg border border-lenovo-line px-3 text-base focus:border-lenovo-red focus:outline-none"
               placeholder="Enter passcode"
             />
 
             {error ? (
-              <p className="mt-3 rounded-card border border-lenovo-red/30 bg-lenovo-red/5 p-3 text-sm text-lenovo-red">
+              <p className="mt-3 rounded-card border border-lenovo-maroon/30 bg-lenovo-maroon/5 p-3 text-sm text-lenovo-maroon">
                 {error}
               </p>
             ) : null}

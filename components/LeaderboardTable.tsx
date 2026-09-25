@@ -4,15 +4,20 @@ import { groupForGroupNumber } from "@/lib/evaluators";
 export function LeaderboardTable({
   rows,
   showEvaluatorTeam = true,
+  resolveGroup = groupForGroupNumber,
 }: {
   rows: LeaderboardRow[];
   showEvaluatorTeam?: boolean;
+  /** Maps a group number to its evaluator pair/label. Defaults to the UP
+   * (round 1) groups; pass lib/pune.ts's puneGroupForGroupNumber for the
+   * Pune leaderboard, since group numbers there map to different people. */
+  resolveGroup?: (groupNumber: number) => { evaluators: string[] } | undefined;
 }) {
   return (
     <div className="overflow-hidden rounded-card border border-lenovo-line bg-white shadow-card">
       <table className="w-full border-collapse text-left text-sm">
         <thead>
-          <tr className="bg-lenovo-navy text-white">
+          <tr className="bg-lenovo-red text-white">
             <th className="whitespace-nowrap px-4 py-3 font-semibold">Rank</th>
             <th className="whitespace-nowrap px-4 py-3 font-semibold">Table</th>
             <th className="px-4 py-3 font-semibold">Team</th>
@@ -35,7 +40,7 @@ export function LeaderboardTable({
             const rank = index + 1;
             const topTen = rank <= 10 && row.average_total !== null;
             const evaluatorGroup = showEvaluatorTeam
-              ? groupForGroupNumber(row.group_number ?? -1)
+              ? resolveGroup(row.group_number ?? -1)
               : undefined;
             return (
               <tr
@@ -62,6 +67,7 @@ export function LeaderboardTable({
                   <p className="font-medium text-lenovo-ink">
                     {row.team_name || "Unnamed team"}
                   </p>
+                  <p className="text-xs text-lenovo-muted">{row.team_id}</p>
                   <p className="text-xs text-lenovo-muted sm:hidden">
                     {row.project_title}
                   </p>
@@ -71,7 +77,7 @@ export function LeaderboardTable({
                 </td>
                 {showEvaluatorTeam ? (
                   <td className="px-4 py-3">
-                    <span className="inline-flex items-center rounded-full bg-lenovo-navy/10 px-2.5 py-1 text-xs font-semibold text-lenovo-navy">
+                    <span className="inline-flex items-center rounded-full bg-lenovo-purple/10 px-2.5 py-1 text-xs font-semibold text-lenovo-purple">
                       Team {row.group_number}
                     </span>
                     {evaluatorGroup ? (

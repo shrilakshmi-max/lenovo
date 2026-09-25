@@ -6,12 +6,12 @@ import { useParams } from "next/navigation";
 import { Header } from "@/components/Header";
 import { RubricReference } from "@/components/RubricReference";
 import { ScoreForm } from "@/components/ScoreForm";
-import { useRound2Evaluator } from "@/lib/useRound2Evaluator";
+import { usePuneEvaluator } from "@/lib/usePuneEvaluator";
 import { supabase } from "@/lib/supabaseClient";
 import { Team } from "@/lib/types";
 
-export default function Round2TeamGradingPage() {
-  const evaluatorName = useRound2Evaluator();
+export default function PuneTeamGradingPage() {
+  const evaluatorName = usePuneEvaluator();
   const params = useParams<{ tableNumber: string }>();
   const tableNumber = Number(params.tableNumber);
 
@@ -22,10 +22,9 @@ export default function Round2TeamGradingPage() {
     let cancelled = false;
     async function load() {
       const { data } = await supabase
-        .from("teams")
+        .from("pune_teams")
         .select("*")
         .eq("table_number", tableNumber)
-        .eq("round2_qualified", true)
         .maybeSingle();
       if (!cancelled) setTeam((data as Team) ?? null);
     }
@@ -37,20 +36,20 @@ export default function Round2TeamGradingPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header evaluatorName={evaluatorName} mode="round2" />
+      <Header evaluatorName={evaluatorName} mode="pune" />
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6">
         <Link
-          href="/round2/teams"
+          href="/pune/teams"
           className="mb-4 inline-block text-sm font-medium text-lenovo-muted hover:text-lenovo-red"
         >
-          &larr; Back to round 2 teams
+          &larr; Back to my teams
         </Link>
 
         {team === undefined ? (
           <p className="text-sm text-lenovo-muted">Loading team...</p>
         ) : team === null ? (
           <p className="rounded-card border border-lenovo-maroon/30 bg-lenovo-maroon/5 p-4 text-sm text-lenovo-maroon">
-            No round 2 team found for table {tableNumber}.
+            No team found for table {tableNumber}.
           </p>
         ) : (
           <>
@@ -104,8 +103,8 @@ export default function Round2TeamGradingPage() {
               <ScoreForm
                 tableNumber={team.table_number}
                 evaluatorName={evaluatorName}
-                scoresTable="round2_scores"
-                backHref="/round2/teams"
+                scoresTable="pune_scores"
+                backHref="/pune/teams"
               />
             ) : null}
           </>

@@ -6,53 +6,85 @@ import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "./Logo";
 import { clearEvaluator } from "@/lib/evaluators";
 import { clearRound2Evaluator } from "@/lib/round2";
+import { clearPuneEvaluator } from "@/lib/pune";
+
+export type HeaderMode = "round1" | "round2" | "pune";
+
+interface ModeConfig {
+  homeHref: string;
+  teamsHref: string;
+  teamsLabel: string;
+  leaderboardHref: string;
+  leaderboardLabel: string;
+  evaluatorLabel: string;
+  clearEvaluator: () => void;
+}
+
+const MODE_CONFIG: Record<HeaderMode, ModeConfig> = {
+  round1: {
+    homeHref: "/up",
+    teamsHref: "/teams",
+    teamsLabel: "My Teams",
+    leaderboardHref: "/leaderboard",
+    leaderboardLabel: "Leaderboard",
+    evaluatorLabel: "Evaluator",
+    clearEvaluator,
+  },
+  round2: {
+    homeHref: "/round2",
+    teamsHref: "/round2/teams",
+    teamsLabel: "Round 2 Teams",
+    leaderboardHref: "/round2/leaderboard",
+    leaderboardLabel: "Round 2 Leaderboard",
+    evaluatorLabel: "Round 2 Evaluator",
+    clearEvaluator: clearRound2Evaluator,
+  },
+  pune: {
+    homeHref: "/pune",
+    teamsHref: "/pune/teams",
+    teamsLabel: "My Teams",
+    leaderboardHref: "/pune/leaderboard",
+    leaderboardLabel: "Leaderboard",
+    evaluatorLabel: "Evaluator",
+    clearEvaluator: clearPuneEvaluator,
+  },
+};
 
 export function Header({
   evaluatorName,
   mode = "round1",
 }: {
   evaluatorName?: string | null;
-  mode?: "round1" | "round2";
+  mode?: HeaderMode;
 }) {
   const pathname = usePathname();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
+  const config = MODE_CONFIG[mode];
 
   useEffect(() => {
     setMenuOpen(false);
   }, [pathname]);
 
-  const isRound2 = mode === "round2";
-  const homeHref = isRound2 ? "/round2" : "/";
-  const teamsHref = isRound2 ? "/round2/teams" : "/teams";
-  const leaderboardHref = isRound2 ? "/round2/leaderboard" : "/leaderboard";
-
   const links = evaluatorName
     ? [
-        { href: teamsHref, label: isRound2 ? "Round 2 Teams" : "My Teams" },
-        {
-          href: leaderboardHref,
-          label: isRound2 ? "Round 2 Leaderboard" : "Leaderboard",
-        },
+        { href: config.teamsHref, label: config.teamsLabel },
+        { href: config.leaderboardHref, label: config.leaderboardLabel },
       ]
-    : [{ href: leaderboardHref, label: isRound2 ? "Round 2 Leaderboard" : "Leaderboard" }];
+    : [{ href: config.leaderboardHref, label: config.leaderboardLabel }];
 
   const isActive = (href: string) =>
     pathname === href || pathname?.startsWith(href + "/");
 
   function switchEvaluator() {
-    if (isRound2) {
-      clearRound2Evaluator();
-    } else {
-      clearEvaluator();
-    }
-    router.push(homeHref);
+    config.clearEvaluator();
+    router.push(config.homeHref);
   }
 
   return (
-    <header className="sticky top-0 z-30 border-b border-black/10 bg-lenovo-navy">
+    <header className="sticky top-0 z-30 border-b border-black/10 bg-lenovo-red">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
-        <Link href={homeHref} className="shrink-0">
+        <Link href={config.homeHref} className="shrink-0">
           <Logo variant="light" />
         </Link>
 
@@ -64,7 +96,7 @@ export function Header({
               href={link.href}
               className={`touch-target flex items-center rounded-full px-4 text-sm font-medium transition-colors ${
                 isActive(link.href)
-                  ? "bg-lenovo-red text-white"
+                  ? "bg-white text-lenovo-red"
                   : "text-white/80 hover:bg-white/10 hover:text-white"
               }`}
             >
@@ -75,7 +107,7 @@ export function Header({
             <>
               <div className="ml-1 hidden items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 sm:flex">
                 <span className="text-xs uppercase tracking-wide text-white/60">
-                  {isRound2 ? "Round 2 Evaluator" : "Evaluator"}
+                  {config.evaluatorLabel}
                 </span>
                 <span className="text-sm font-semibold text-white">
                   {evaluatorName}
@@ -120,7 +152,7 @@ export function Header({
 
       {/* Mobile menu panel */}
       {menuOpen ? (
-        <div className="border-t border-white/10 bg-lenovo-navy-deep px-4 py-3 sm:hidden">
+        <div className="border-t border-white/10 bg-lenovo-red-dark px-4 py-3 sm:hidden">
           <nav className="flex flex-col gap-1">
             {links.map((link) => (
               <Link
@@ -128,7 +160,7 @@ export function Header({
                 href={link.href}
                 className={`touch-target flex items-center rounded-lg px-3 text-sm font-medium transition-colors ${
                   isActive(link.href)
-                    ? "bg-lenovo-red text-white"
+                    ? "bg-white text-lenovo-red"
                     : "text-white/80 hover:bg-white/10 hover:text-white"
                 }`}
               >
@@ -141,7 +173,7 @@ export function Header({
             <div className="mt-3 flex items-center justify-between rounded-lg bg-white/10 px-3 py-2.5">
               <div>
                 <p className="text-xs uppercase tracking-wide text-white/60">
-                  {isRound2 ? "Round 2 Evaluator" : "Evaluator"}
+                  {config.evaluatorLabel}
                 </p>
                 <p className="text-sm font-semibold text-white">{evaluatorName}</p>
               </div>

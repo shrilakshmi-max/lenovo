@@ -21,7 +21,7 @@ export function Round2EvaluatorPicker() {
           <button
             key={name}
             onClick={() => choose(name)}
-            className="touch-target rounded-lg border border-lenovo-navy bg-lenovo-navy px-4 py-3 text-base font-semibold text-white transition-colors hover:bg-lenovo-navy-deep active:bg-lenovo-navy-deep"
+            className="touch-target rounded-lg border border-lenovo-red bg-lenovo-red px-4 py-3 text-base font-semibold text-white transition-colors hover:bg-lenovo-red-dark active:bg-lenovo-red-dark"
           >
             {name}
           </button>
