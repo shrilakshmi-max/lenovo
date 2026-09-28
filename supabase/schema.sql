@@ -90,10 +90,13 @@ select
   round(avg(s.theme_alignment)::numeric, 2) as avg_theme_alignment,
   round(avg(s.innovation)::numeric, 2) as avg_innovation,
   round(avg(s.technical_implementation)::numeric, 2) as avg_technical_implementation,
-  round(avg(s.scalability)::numeric, 2) as avg_scalability
+  round(avg(s.scalability)::numeric, 2) as avg_scalability,
+  t.leader_name,
+  t.member2_name,
+  t.project_link
 from teams t
 left join scores s on s.table_number = t.table_number
-group by t.table_number, t.team_id, t.team_name, t.project_title, t.project_theme, t.group_number
+group by t.table_number, t.team_id, t.team_name, t.project_title, t.project_theme, t.group_number, t.leader_name, t.member2_name, t.project_link
 order by average_total desc nulls last, t.table_number asc;
 
 alter view leaderboard set (security_invoker = true);
@@ -238,10 +241,13 @@ select
   round(avg(s.theme_alignment)::numeric, 2) as avg_theme_alignment,
   round(avg(s.innovation)::numeric, 2) as avg_innovation,
   round(avg(s.technical_implementation)::numeric, 2) as avg_technical_implementation,
-  round(avg(s.scalability)::numeric, 2) as avg_scalability
+  round(avg(s.scalability)::numeric, 2) as avg_scalability,
+  t.leader_name,
+  t.member2_name,
+  t.project_link
 from pune_teams t
 left join pune_scores s on s.table_number = t.table_number
-group by t.table_number, t.team_id, t.team_name, t.project_title, t.project_theme, t.group_number
+group by t.table_number, t.team_id, t.team_name, t.project_title, t.project_theme, t.group_number, t.leader_name, t.member2_name, t.project_link
 order by average_total desc nulls last, t.table_number asc;
 
 alter view pune_leaderboard set (security_invoker = true);
@@ -293,7 +299,10 @@ create policy "public read pune roster" on pune_roster for select using (true);
 -- Table assignment within a group: solo teams (no second member) prefer
 -- that group's small reserved solo pool; two-person teams prefer the
 -- larger regular pool. If a team's preferred pool is exhausted, it spills
--- into the other pool for that group instead of blocking registration.
+-- into the other pool for that group instead of blocking registration. If
+-- the group's whole 1-72 range is exhausted, overflow into a shared
+-- sequential pool starting at 73 (no solo/regular distinction there) -
+-- still routed to this group by the round-robin in the caller.
 create or replace function assign_pune_table(p_group smallint, p_is_solo boolean)
 returns integer
 language plpgsql
@@ -354,7 +363,9 @@ begin
   end if;
 
   if v_table is null then
-    raise exception 'Group % is completely full - no table numbers left', p_group using errcode = 'P0001';
+    select greatest(73, coalesce(max(table_number), 72) + 1)
+    into v_table
+    from pune_teams;
   end if;
 
   return v_table;

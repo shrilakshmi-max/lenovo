@@ -36,8 +36,11 @@ export interface LeaderboardRow {
   table_number: number;
   team_id: string | null;
   team_name: string | null;
+  leader_name?: string | null;
+  member2_name?: string | null;
   project_title: string | null;
   project_theme: string | null;
+  project_link?: string | null;
   group_number?: 1 | 2 | 3 | 4;
   evaluations_count: number;
   average_total: number | null;

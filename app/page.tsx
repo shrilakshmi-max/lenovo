@@ -58,12 +58,20 @@ export default function WelcomePage() {
           </Link>
         </div>
 
-        <Link
-          href="/pune/admin"
-          className="touch-target mt-10 flex items-center rounded-full border border-lenovo-line px-5 text-sm font-medium text-lenovo-muted transition-colors hover:border-lenovo-red hover:text-lenovo-red"
-        >
-          Admin
-        </Link>
+        <div className="mt-10 flex items-center gap-3">
+          <Link
+            href="/pune/admin"
+            className="touch-target flex items-center rounded-full border border-lenovo-line px-5 text-sm font-medium text-lenovo-muted transition-colors hover:border-lenovo-red hover:text-lenovo-red"
+          >
+            Admin
+          </Link>
+          <Link
+            href="/export"
+            className="touch-target flex items-center rounded-full border border-lenovo-line px-5 text-sm font-medium text-lenovo-muted transition-colors hover:border-lenovo-red hover:text-lenovo-red"
+          >
+            Export results
+          </Link>
+        </div>
       </main>
     </div>
   );
