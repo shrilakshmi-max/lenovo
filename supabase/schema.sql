@@ -710,7 +710,12 @@ $$;
 -- serializes every call against every other call to this function AND
 -- register_new_raipur_team, so two desks registering teams at the same
 -- instant can never collide.
-create or replace function register_raipur_team(p_team_id text)
+-- create or replace can't change a function's OUT parameters, so a re-run
+-- against a database with an older version of this function (fewer return
+-- columns) needs the old one dropped first.
+drop function if exists register_raipur_team(text);
+
+create function register_raipur_team(p_team_id text)
 returns table (assigned_table_number integer, assigned_group_number smallint, assigned_location text)
 language plpgsql
 as $$

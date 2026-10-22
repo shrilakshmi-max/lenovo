@@ -17,7 +17,11 @@ as $$
   select array['C291', 'C346', 'C730', 'C509', 'C732', 'C391'];
 $$;
 
-create or replace function register_raipur_team(p_team_id text)
+-- register_raipur_team's return columns changed (added assigned_location),
+-- and create or replace can't change a function's OUT parameters.
+drop function if exists register_raipur_team(text);
+
+create function register_raipur_team(p_team_id text)
 returns table (assigned_table_number integer, assigned_group_number smallint, assigned_location text)
 language plpgsql
 as $$
