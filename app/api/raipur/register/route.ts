@@ -34,12 +34,14 @@ export async function POST(req: NextRequest) {
   }
 
   const result = data as {
-    assigned_table_number: number;
+    assigned_table_number: number | null;
     assigned_group_number: number;
+    assigned_location: string | null;
   };
 
   return NextResponse.json({
     tableNumber: result.assigned_table_number,
     groupNumber: result.assigned_group_number,
+    location: result.assigned_location,
   });
 }

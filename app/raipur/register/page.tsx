@@ -21,7 +21,8 @@ interface RosterEntry {
 
 interface Confirmation {
   teamId: string;
-  tableNumber: number;
+  tableNumber: number | null;
+  location: string | null;
   groupNumber: number;
   projectTheme: string | null;
   isSolo: boolean;
@@ -201,6 +202,7 @@ export default function RaipurRegisterPage() {
       setConfirmation({
         teamId: selected.team_id,
         tableNumber: body.tableNumber,
+        location: body.location,
         groupNumber: body.groupNumber,
         projectTheme: selected.project_theme,
         isSolo: isSoloRoster(selected),
@@ -249,6 +251,7 @@ export default function RaipurRegisterPage() {
       setConfirmation({
         teamId: body.teamId,
         tableNumber: body.tableNumber,
+        location: body.location ?? null,
         groupNumber: body.groupNumber,
         projectTheme: newTeam.projectTheme,
         isSolo: !newTeam.member2Name.trim(),
@@ -290,12 +293,14 @@ export default function RaipurRegisterPage() {
                 Registered - send them to
               </p>
               <p className="mt-1 font-display text-5xl font-bold text-white">
-                Table {confirmation.tableNumber}
+                {confirmation.tableNumber != null
+                  ? `Table ${confirmation.tableNumber}`
+                  : confirmation.location ?? "Unassigned"}
               </p>
               <p className="mt-2 text-sm text-white/80">
                 Evaluator group {confirmation.groupNumber}
               </p>
-              {confirmation.isSolo ? (
+              {confirmation.isSolo && confirmation.tableNumber != null ? (
                 <p className="mt-3 text-xs text-white/80">
                   One-person team - this table may be shared with another
                   solo team.

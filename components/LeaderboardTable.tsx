@@ -62,7 +62,9 @@ export function LeaderboardTable({
                     {rank}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-lenovo-muted">{row.table_number}</td>
+                <td className="px-4 py-3 text-lenovo-muted">
+                  {(row.table_number as number | null) ?? row.location ?? "-"}
+                </td>
                 <td className="px-4 py-3">
                   <p className="font-medium text-lenovo-ink">
                     {row.team_name || "Unnamed team"}

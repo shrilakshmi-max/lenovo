@@ -56,11 +56,13 @@ export default function RaipurTeamGradingPage() {
             <div className="mb-6 rounded-card border border-lenovo-line bg-white p-5 shadow-card">
               <div className="mb-2 flex items-center justify-between">
                 <span className="rounded-full bg-lenovo-red px-2.5 py-1 text-xs font-semibold text-white">
-                  Table {team.table_number}
+                  {(team.table_number as number | null) != null
+                    ? `Table ${team.table_number}`
+                    : team.location ?? "Unassigned"}
                 </span>
                 <RubricReference />
               </div>
-              {team.is_solo ? (
+              {team.is_solo && (team.table_number as number | null) != null ? (
                 <p className="mb-2 text-xs text-lenovo-muted">
                   This table may be shared with another one-person team -
                   check the Team ID below before scoring.

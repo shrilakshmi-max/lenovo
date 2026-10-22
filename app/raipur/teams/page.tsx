@@ -28,7 +28,7 @@ export default function RaipurTeamsPage() {
         .from("raipur_teams")
         .select("*")
         .eq("group_number", group!.groupNumber)
-        .order("table_number", { ascending: true });
+        .order("table_number", { ascending: true, nullsFirst: false });
 
       if (cancelled) return;
       if (teamError) {

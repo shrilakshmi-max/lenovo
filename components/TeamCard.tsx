@@ -26,7 +26,11 @@ export function TeamCard({
               </span>
             ) : null}
             <span className="rounded-full bg-lenovo-red px-2.5 py-1 text-xs font-semibold text-white">
-              Table {team.table_number}
+              {/* table_number is only ever null for Raipur's Lab 1 teams,
+                  despite the shared Team type declaring it non-null. */}
+              {(team.table_number as number | null) != null
+                ? `Table ${team.table_number}`
+                : team.location ?? "Unassigned"}
             </span>
           </div>
           {graded ? (

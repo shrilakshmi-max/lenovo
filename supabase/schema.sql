@@ -529,7 +529,9 @@ create table if not exists raipur_roster (
 
 create table if not exists raipur_teams (
   team_id text primary key,
-  table_number integer not null,
+  -- Null for the fixed Lab 1 teams (see `location` below) - every other
+  -- team gets a real table number from assign_raipur_table.
+  table_number integer,
   team_name text,
   leader_name text,
   member2_name text,
@@ -546,6 +548,10 @@ create table if not exists raipur_teams (
   -- appear on at most 2 rows (both is_solo = true) or exactly 1 row
   -- (is_solo = false, a dedicated two-person table).
   is_solo boolean not null default false,
+  -- Fixed seating label overriding table_number, e.g. "Lab 1" for the
+  -- handful of special teams judged outside the normal table blocks.
+  -- Null for every ordinary team.
+  location text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -619,11 +625,12 @@ select
   round(avg(s.scalability)::numeric, 2) as avg_scalability,
   t.leader_name,
   t.member2_name,
-  t.project_link
+  t.project_link,
+  t.location
 from raipur_teams t
 left join raipur_scores s on s.team_id = t.team_id
-group by t.team_id, t.table_number, t.team_name, t.project_title, t.project_theme, t.group_number, t.leader_name, t.member2_name, t.project_link
-order by average_total desc nulls last, t.table_number asc;
+group by t.team_id, t.table_number, t.team_name, t.project_title, t.project_theme, t.group_number, t.leader_name, t.member2_name, t.project_link, t.location
+order by average_total desc nulls last, t.table_number asc nulls last;
 
 alter view raipur_leaderboard set (security_invoker = true);
 
@@ -683,15 +690,28 @@ begin
 end;
 $$;
 
+-- Team IDs fixed to Lab 1 with the Pratima/Priyanshi evaluator group
+-- (group 5) instead of a normal table - see register_raipur_team below.
+create or replace function raipur_lab1_team_ids()
+returns text[]
+language sql
+immutable
+as $$
+  select array['C291', 'C346', 'C730', 'C509', 'C732', 'C391'];
+$$;
+
 -- Atomically assigns a table number + evaluator group to a roster team and
 -- creates its raipur_teams row. Called from /api/raipur/register via the
 -- service-role client. Group assignment: simple round robin over check-in
 -- order (1st team overall -> group 1, 2nd -> group 2, ..., 5th -> group 5,
--- 6th -> group 1 again, ...). pg_advisory_xact_lock serializes every call
--- against every other call to this function AND register_new_raipur_team,
--- so two desks registering teams at the same instant can never collide.
+-- 6th -> group 1 again, ...) - except the fixed Lab 1 team IDs
+-- (raipur_lab1_team_ids), which always get group 5 (Pratima/Priyanshi) and
+-- no table number, regardless of check-in order. pg_advisory_xact_lock
+-- serializes every call against every other call to this function AND
+-- register_new_raipur_team, so two desks registering teams at the same
+-- instant can never collide.
 create or replace function register_raipur_team(p_team_id text)
-returns table (assigned_table_number integer, assigned_group_number smallint)
+returns table (assigned_table_number integer, assigned_group_number smallint, assigned_location text)
 language plpgsql
 as $$
 declare
@@ -700,6 +720,7 @@ declare
   v_group smallint;
   v_is_solo boolean;
   v_table integer;
+  v_location text;
 begin
   perform pg_advisory_xact_lock(hashtext('raipur_register'));
 
@@ -713,26 +734,34 @@ begin
 
   select count(*) into v_position from raipur_teams;
   v_position := v_position + 1;
-  v_group := ((v_position - 1) % 5) + 1;
 
   v_is_solo := (v_roster.member2_name is null or btrim(v_roster.member2_name) = '');
-  v_table := assign_raipur_table(v_group, v_is_solo);
+
+  if p_team_id = any (raipur_lab1_team_ids()) then
+    v_group := 5;
+    v_table := null;
+    v_location := 'Lab 1';
+  else
+    v_group := ((v_position - 1) % 5) + 1;
+    v_table := assign_raipur_table(v_group, v_is_solo);
+    v_location := null;
+  end if;
 
   insert into raipur_teams (
     team_id, table_number, team_name, leader_name, member2_name,
     leader_email, leader_contact, attendees, project_title, project_theme,
-    project_link, pitch_night_marks, group_number, is_solo
+    project_link, pitch_night_marks, group_number, is_solo, location
   ) values (
     v_roster.team_id, v_table, v_roster.team_name, v_roster.leader_name, v_roster.member2_name,
     v_roster.leader_email, v_roster.leader_contact, v_roster.attendees, v_roster.project_title, v_roster.project_theme,
-    v_roster.project_link, v_roster.pitch_night_marks, v_group, v_is_solo
+    v_roster.project_link, v_roster.pitch_night_marks, v_group, v_is_solo, v_location
   );
 
   update raipur_roster
   set registered = true, registered_table_number = v_table
   where team_id = p_team_id;
 
-  return query select v_table, v_group;
+  return query select v_table, v_group, v_location;
 end;
 $$;
 
