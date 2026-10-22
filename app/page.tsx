@@ -4,11 +4,11 @@ import { Header } from "@/components/Header";
 export default function WelcomePage() {
   return (
     <div className="flex min-h-screen flex-col">
-      <Header mode="pune" />
+      <Header mode="raipur" />
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center px-4 py-12 sm:px-6">
         <div className="mb-10 text-center">
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-lenovo-red">
-            Lenovo LEAP Hackathon - Pune
+            Lenovo LEAP Hackathon - Raipur
           </p>
           <h1 className="font-display text-2xl font-semibold text-lenovo-ink sm:text-3xl">
             What would you like to do?
@@ -17,7 +17,7 @@ export default function WelcomePage() {
 
         <div className="grid w-full max-w-3xl gap-5 sm:grid-cols-2">
           <Link
-            href="/pune/register"
+            href="/raipur/register"
             className="group flex flex-col justify-between rounded-card border border-lenovo-line bg-white p-8 shadow-card transition-transform hover:-translate-y-1"
           >
             <div>
@@ -38,7 +38,7 @@ export default function WelcomePage() {
           </Link>
 
           <Link
-            href="/pune"
+            href="/raipur"
             className="group flex flex-col justify-between rounded-card border border-lenovo-line bg-white p-8 shadow-card transition-transform hover:-translate-y-1"
           >
             <div>
@@ -60,7 +60,7 @@ export default function WelcomePage() {
 
         <div className="mt-10 flex items-center gap-3">
           <Link
-            href="/pune/admin"
+            href="/raipur/admin"
             className="touch-target flex items-center rounded-full border border-lenovo-line px-5 text-sm font-medium text-lenovo-muted transition-colors hover:border-lenovo-red hover:text-lenovo-red"
           >
             Admin

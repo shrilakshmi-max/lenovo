@@ -100,7 +100,11 @@ export default function TeamGradingPage() {
             </div>
 
             {evaluatorName ? (
-              <ScoreForm tableNumber={team.table_number} evaluatorName={evaluatorName} />
+              <ScoreForm
+                matchColumn="table_number"
+                matchValue={team.table_number}
+                evaluatorName={evaluatorName}
+              />
             ) : null}
           </>
         )}

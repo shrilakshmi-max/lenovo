@@ -3,45 +3,58 @@
 Next.js 14 (App Router) + Supabase app for evaluators to score teams against
 the rubric and see a live leaderboard, built for the Lenovo LEAP Hackathon.
 
-The app now hosts two independent hackathons. **`/` (the root URL) is Pune -
-the current, active event.** UP (Lucknow) still runs exactly as before, just
-moved to `/up` and no longer linked from the main UI, since that event is
-over. See [Pune](#pune-a-separate-hackathon) and [UP](#up-lucknow---hidden-from-the-ui)
-below for details on each.
+The app now hosts three independent hackathons. **`/` (the root URL) is
+Raipur - the current, active event.** UP (Lucknow) and Pune still run
+exactly as before, just moved off the root URL and no longer linked from
+the main UI, since those events are over. See
+[Raipur](#raipur-a-separate-hackathon-with-shared-tables),
+[Pune](#pune-a-separate-hackathon), and
+[UP](#up-lucknow---hidden-from-the-ui) below for details on each.
 
 ## What's included
 
-- **Team database import** (`/admin` for UP, `/pune/admin` for Pune): upload
-  the team-list CSV (same column layout as the source sheet) to reset that
-  event's database. Every import **deletes all existing teams and scores
-  for that event first**, then loads the new file - there's no
-  merge/preserve behavior. A separate "Clear all data" action on the same
-  page wipes everything without needing a replacement file. Both require
-  the admin passcode and a confirmation prompt before running. On UP,
-  either action also wipes round 2 (the `round2_qualified` flags and
-  `round2_scores`), since it deletes the `teams` rows they depend on.
+- **Team database import** (`/admin` for UP, `/pune/admin` for Pune,
+  `/raipur/admin` for Raipur): upload the team-list CSV (same column
+  layout as the source sheet) to reset that event's database. Every import
+  **deletes all existing teams and scores for that event first**, then
+  loads the new file - there's no merge/preserve behavior. A separate
+  "Clear all data" action on the same page wipes everything without
+  needing a replacement file. Both require the admin passcode and a
+  confirmation prompt before running. On UP, either action also wipes
+  round 2 (the `round2_qualified` flags and `round2_scores`), since it
+  deletes the `teams` rows they depend on.
 - **Automatic grouping**: teams are sorted by table number ascending and
-  split into 4 even groups on every import (`lib/csvImport.ts`).
+  split into even groups on every bulk import (4 for UP/Pune, 5 for
+  Raipur - `lib/csvImport.ts` / `lib/raipurCsvImport.ts`).
 - **Evaluator selection that persists on-device** (`localStorage`, not a
   cookie/account) - each named evaluator sees only their group's teams from
   then on, on that device, until they tap "Switch".
 - **Rubric-based scoring** (`/teams/[tableNumber]` for UP,
-  `/pune/teams/[tableNumber]` for Pune): Theme Alignment, Innovation,
-  Technical Implementation, Scalability, each 1-10, with the full rubric
-  text available in a "View rubric" panel. Submitting writes straight to
-  Supabase; re-opening a team you already scored preloads your previous
+  `/pune/teams/[tableNumber]` for Pune, `/raipur/teams/[teamId]` for
+  Raipur): Theme Alignment, Innovation, Technical Implementation,
+  Scalability, each 1-10, with the full rubric text available in a "View
+  rubric" panel and an optional comment field. Submitting writes straight
+  to Supabase; re-opening a team you already scored preloads your previous
   numbers so you can edit them.
-- **Live leaderboard** (`/leaderboard` for UP, `/pune/leaderboard` for
-  Pune): ranks teams by average total score across all evaluators who have
-  scored them, top 10 highlighted, refreshes every 15 seconds.
+- **Live leaderboard** (`/leaderboard`, `/pune/leaderboard`,
+  `/raipur/leaderboard`): ranks teams by average total score across all
+  evaluators who have scored them, top 10 highlighted, refreshes every 15
+  seconds.
+- **Results export** (`/export`, linked from the homepage): downloads a
+  CSV per hackathon - rank, team name, students, project name, project
+  theme, project link.
 - **Round 2** (`/round2`, UP only, not linked anywhere in the UI - see
   below): a separate scoring round for the top 20 teams from the UP
   leaderboard, with its own 3-evaluator pool (Arvind, Utkarsh, Amit) and
   the same rubric. Wasn't used in Lucknow; the code is dormant but intact
   in case a future event wants it.
-- **Pune** (`/`, the default page): a second, fully
-  independent hackathon in the same app - separate teams, scores,
-  evaluators, and admin import, sharing nothing with UP's data. See below.
+- **Pune** (`/pune`, hidden from the UI once Raipur became the default - see
+  below): a second, fully independent hackathon - separate teams, scores,
+  evaluators, and admin import, sharing nothing with UP's or Raipur's data.
+- **Raipur** (`/`, the default page): a third, fully independent hackathon,
+  with one structural difference from UP/Pune - two one-person teams can
+  share a table number, so Team ID (not table number) is the unique
+  identity for scoring. See below.
 
 ## UP (Lucknow) - hidden from the UI
 
@@ -158,6 +171,65 @@ table-and-group assignment logic and the same advisory lock
 so two desks registering teams - of either kind - at the same instant can
 never collide on a table number or the round-robin group count.
 
+## Raipur (a separate hackathon, with shared tables)
+
+`/` is now Raipur, a third fully independent hackathon in this same app -
+its own tables (`raipur_teams`, `raipur_scores`, `raipur_roster`), its own
+10-evaluator pool, and its own admin import/clear flow at `/raipur/admin`.
+Nothing about importing, clearing, or scoring Raipur data can affect UP's or
+Pune's tables, and vice versa.
+
+Raipur uses the same rubric as UP/Pune but a 5-groups-of-2 evaluator
+structure (`lib/raipur.ts`):
+
+| Group | Evaluators | Table block |
+|---|---|---|
+| 1 | Amit, Rajat | 1, 11, 21, 31, 41, ... |
+| 2 | Pramay, Rajkamal | 2, 12, 22, 32, 42, ... |
+| 3 | Rushikesh, Sudhi | 3, 13, 23, 33, 43, ... |
+| 4 | Ankush, Tushar | 4, 14, 24, 34, 44, ... |
+| 5 | Pratima, Priyanshi | 5, 15, 25, 35, 45, ... |
+
+**Table assignment differs from UP/Pune.** Each group owns a dedicated
+block of 10 table numbers (group *g* gets `(g-1)*10 + 1` through
+`(g-1)*10 + 10`). Within a group's block, a 2-person team always takes the
+next unused table number. A 1-person team instead first looks for another
+1-person team *already seated alone* at a table in the same group's block
+(`is_solo = true`, no second occupant yet) and joins them there, so **two
+solo teams can share one table number** - only once that pairing happens
+does the next solo team get a fresh table. Once a group's block of 10 is
+full, additional teams overflow into shared numbering starting at 51,
+assigned round-robin across all 5 groups with no solo/duo distinction (same
+pattern as Pune's >72 overflow).
+
+Because table numbers are no longer unique, **Team ID is the unique key**
+for `raipur_teams` and everywhere scoring happens - `/raipur/teams/[teamId]`
+(not `[tableNumber]`), `ScoreForm`'s `matchColumn="team_id"`, and the
+leaderboard view all key off Team ID. Table number is kept purely as a
+seating/display field. The team-detail page flags this for evaluators when
+a team is solo ("This table may be shared with another one-person team -
+check the Team ID below before scoring").
+
+If you're setting this up on an already-deployed database, run these once
+in the SQL editor, in order - `supabase/schema.sql` already includes all of
+this for new installs, and none of it alters UP's or Pune's tables:
+
+1. [`supabase/migrations/011_raipur.sql`](supabase/migrations/011_raipur.sql) - `raipur_roster`, `raipur_teams`, `raipur_scores`, `raipur_leaderboard`
+2. [`supabase/migrations/012_raipur_register_functions.sql`](supabase/migrations/012_raipur_register_functions.sql) - `assign_raipur_table`, `register_raipur_team`, `register_new_raipur_team`
+
+### Registration desk (`/raipur/register`)
+
+Works exactly like Pune's registration desk: look a team up by Team ID
+(from `raipur_roster`, loaded via the roster import on `/raipur/admin`) and
+press Register to get an assigned table number, evaluator group, and theme
+placard reminder - no passcode needed. Spot/walk-in registration works the
+same way too (auto-generated `W001`, `W002`, ... IDs), and the confirmation
+card additionally calls out when a team is solo and may be sharing its
+table. Both paths share the same advisory lock
+(`register_raipur_team` / `register_new_raipur_team`, both calling
+`assign_raipur_table`), so concurrent desks can never collide on a table
+number, a solo pairing, or the round-robin group count.
+
 ## One-time setup
 
 ### 1. Create the Supabase project
@@ -266,6 +338,10 @@ a numeric Table Number are skipped.
   `total` is a generated column (sum of the four rubric scores).
 - `leaderboard` - a view averaging `scores.total` per team across whichever
   evaluators have scored it so far.
+- Pune and Raipur mirror this with their own `pune_*`/`raipur_*` tables and
+  views. Raipur's `raipur_teams` differs in one way: **Team ID (`team_id`),
+  not table number, is the primary key** - `table_number` is a plain
+  non-unique column, since two 1-person teams can share a table.
 
 ## Known limitations / things to verify once Supabase is connected
 

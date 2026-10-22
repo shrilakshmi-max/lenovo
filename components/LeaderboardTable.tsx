@@ -44,7 +44,7 @@ export function LeaderboardTable({
               : undefined;
             return (
               <tr
-                key={row.table_number}
+                key={row.team_id ?? row.table_number}
                 className={
                   topTen
                     ? "border-b border-lenovo-line bg-lenovo-red/[0.06]"

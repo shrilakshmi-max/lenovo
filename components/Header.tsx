@@ -7,8 +7,9 @@ import { Logo } from "./Logo";
 import { clearEvaluator } from "@/lib/evaluators";
 import { clearRound2Evaluator } from "@/lib/round2";
 import { clearPuneEvaluator } from "@/lib/pune";
+import { clearRaipurEvaluator } from "@/lib/raipur";
 
-export type HeaderMode = "round1" | "round2" | "pune";
+export type HeaderMode = "round1" | "round2" | "pune" | "raipur";
 
 interface ModeConfig {
   homeHref: string;
@@ -47,6 +48,15 @@ const MODE_CONFIG: Record<HeaderMode, ModeConfig> = {
     leaderboardLabel: "Leaderboard",
     evaluatorLabel: "Evaluator",
     clearEvaluator: clearPuneEvaluator,
+  },
+  raipur: {
+    homeHref: "/raipur",
+    teamsHref: "/raipur/teams",
+    teamsLabel: "My Teams",
+    leaderboardHref: "/raipur/leaderboard",
+    leaderboardLabel: "Leaderboard",
+    evaluatorLabel: "Evaluator",
+    clearEvaluator: clearRaipurEvaluator,
   },
 };
 

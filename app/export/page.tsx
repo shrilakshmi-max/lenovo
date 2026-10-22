@@ -25,13 +25,14 @@ function toCsvRows(rows: LeaderboardRow[]): string[][] {
 
 interface HackathonExport {
   label: string;
-  view: "leaderboard" | "pune_leaderboard";
+  view: "leaderboard" | "pune_leaderboard" | "raipur_leaderboard";
   filename: string;
 }
 
 const HACKATHONS: HackathonExport[] = [
   { label: "UP (Lucknow)", view: "leaderboard", filename: "up-leaderboard.csv" },
   { label: "Pune", view: "pune_leaderboard", filename: "pune-leaderboard.csv" },
+  { label: "Raipur", view: "raipur_leaderboard", filename: "raipur-leaderboard.csv" },
 ];
 
 export default function ExportPage() {
@@ -72,7 +73,7 @@ export default function ExportPage() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <Header mode="pune" />
+      <Header mode="raipur" />
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 sm:px-6">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-lenovo-red">
           Results export

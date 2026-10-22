@@ -101,7 +101,8 @@ export default function PuneTeamGradingPage() {
 
             {evaluatorName ? (
               <ScoreForm
-                tableNumber={team.table_number}
+                matchColumn="table_number"
+                matchValue={team.table_number}
                 evaluatorName={evaluatorName}
                 scoresTable="pune_scores"
                 backHref="/pune/teams"

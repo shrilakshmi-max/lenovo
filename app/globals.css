@@ -35,3 +35,38 @@ body {
   background-color: #d4d4d8;
   border-radius: 999px;
 }
+
+.rubric-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: #e4e4e7;
+  outline: none;
+}
+.rubric-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: #e2231a;
+  border: 3px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(10, 15, 38, 0.35);
+  cursor: pointer;
+}
+.rubric-slider::-moz-range-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: #e2231a;
+  border: 3px solid #ffffff;
+  box-shadow: 0 1px 4px rgba(10, 15, 38, 0.35);
+  cursor: pointer;
+}
+.rubric-slider::-moz-range-track {
+  height: 8px;
+  border-radius: 999px;
+  background: #e4e4e7;
+}

@@ -1,9 +1,56 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { MAX_CRITERION_SCORE, MAX_TOTAL_SCORE, RUBRIC } from "@/lib/rubric";
+
+const TIMER_SECONDS = 10 * 60;
+const ORANGE_AT = 5 * 60;
+const RED_AT = 2 * 60;
+
+function formatClock(seconds: number): string {
+  const clamped = Math.max(0, seconds);
+  const m = Math.floor(clamped / 60);
+  const s = clamped % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+
+function timerClasses(secondsLeft: number): string {
+  if (secondsLeft <= 0) return "bg-red-600 animate-pulse";
+  if (secondsLeft <= RED_AT) return "bg-red-600";
+  if (secondsLeft <= ORANGE_AT) return "bg-orange-500";
+  return "bg-green-600";
+}
+
+/** Two short beeps via Web Audio API - no audio file to bundle, and this
+ * only runs after the evaluator has already been tapping the page for
+ * ~10 minutes, so autoplay restrictions don't block it. */
+function playBuzzer() {
+  try {
+    const AudioContextClass =
+      window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+    const ctx = new AudioContextClass();
+    const beepAt = (startTime: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "square";
+      osc.frequency.value = 880;
+      gain.gain.value = 0.2;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(startTime);
+      osc.stop(startTime + 0.25);
+    };
+    const now = ctx.currentTime;
+    beepAt(now);
+    beepAt(now + 0.35);
+    setTimeout(() => ctx.close(), 1000);
+  } catch {
+    // Ignore - AudioContext unsupported or blocked; the visual timer still works.
+  }
+}
 
 type Scores = {
   theme_alignment: number;
@@ -13,13 +60,13 @@ type Scores = {
 };
 
 const EMPTY: Scores = {
-  theme_alignment: 5,
-  innovation: 5,
-  technical_implementation: 5,
-  scalability: 5,
+  theme_alignment: 3,
+  innovation: 3,
+  technical_implementation: 3,
+  scalability: 3,
 };
 
-function Stepper({
+function Slider({
   label,
   value,
   onChange,
@@ -29,42 +76,46 @@ function Stepper({
   onChange: (next: number) => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-card border border-lenovo-line p-3">
-      <span className="text-sm font-medium text-lenovo-ink">{label}</span>
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => onChange(Math.max(1, value - 1))}
-          className="touch-target flex h-11 w-11 items-center justify-center rounded-full border border-lenovo-red text-lg font-semibold text-lenovo-red hover:bg-lenovo-red hover:text-white"
-          aria-label={`Decrease ${label}`}
-        >
-          -
-        </button>
-        <span className="w-8 text-center font-display text-xl font-semibold text-lenovo-ink">
+    <div className="rounded-card border border-lenovo-line p-3">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm font-medium text-lenovo-ink">{label}</span>
+        <span className="w-8 text-center font-display text-xl font-semibold text-lenovo-red">
           {value}
         </span>
-        <button
-          type="button"
-          onClick={() => onChange(Math.min(MAX_CRITERION_SCORE, value + 1))}
-          className="touch-target flex h-11 w-11 items-center justify-center rounded-full border border-lenovo-red bg-lenovo-red text-lg font-semibold text-white hover:bg-lenovo-red-dark"
-          aria-label={`Increase ${label}`}
-        >
-          +
-        </button>
+      </div>
+      <input
+        type="range"
+        min={1}
+        max={MAX_CRITERION_SCORE}
+        step={1}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        aria-label={label}
+        className="rubric-slider touch-target mt-3"
+      />
+      <div className="mt-1 flex justify-between px-1 text-xs text-lenovo-muted">
+        {Array.from({ length: MAX_CRITERION_SCORE }, (_, i) => i + 1).map((n) => (
+          <span key={n}>{n}</span>
+        ))}
       </div>
     </div>
   );
 }
 
 export function ScoreForm({
-  tableNumber,
+  matchColumn = "table_number",
+  matchValue,
   evaluatorName,
   scoresTable = "scores",
   backHref = "/teams",
 }: {
-  tableNumber: number;
+  /** Which column identifies the team in `scoresTable`. Raipur uses
+   * "team_id" since its table_number isn't unique (two solo teams can
+   * share a table) - every other hackathon matches by table_number. */
+  matchColumn?: "table_number" | "team_id";
+  matchValue: number | string;
   evaluatorName: string;
-  scoresTable?: "scores" | "round2_scores" | "pune_scores";
+  scoresTable?: "scores" | "round2_scores" | "pune_scores" | "raipur_scores";
   backHref?: string;
 }) {
   const router = useRouter();
@@ -74,6 +125,24 @@ export function ScoreForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(TIMER_SECONDS);
+  const buzzedRef = useRef(false);
+
+  useEffect(() => {
+    setSecondsLeft(TIMER_SECONDS);
+    buzzedRef.current = false;
+    const interval = setInterval(() => {
+      setSecondsLeft((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [matchColumn, matchValue]);
+
+  useEffect(() => {
+    if (secondsLeft === 0 && !buzzedRef.current) {
+      buzzedRef.current = true;
+      playBuzzer();
+    }
+  }, [secondsLeft]);
 
   useEffect(() => {
     let cancelled = false;
@@ -81,7 +150,7 @@ export function ScoreForm({
       const { data, error: fetchError } = await supabase
         .from(scoresTable)
         .select("*")
-        .eq("table_number", tableNumber)
+        .eq(matchColumn, matchValue)
         .eq("evaluator_name", evaluatorName)
         .maybeSingle();
 
@@ -104,7 +173,7 @@ export function ScoreForm({
     return () => {
       cancelled = true;
     };
-  }, [tableNumber, evaluatorName, scoresTable]);
+  }, [matchColumn, matchValue, evaluatorName, scoresTable]);
 
   const total =
     scores.theme_alignment +
@@ -117,12 +186,12 @@ export function ScoreForm({
     setError(null);
     const { error: upsertError } = await supabase.from(scoresTable).upsert(
       {
-        table_number: tableNumber,
+        [matchColumn]: matchValue,
         evaluator_name: evaluatorName,
         ...scores,
         comment: comment.trim() || null,
       },
-      { onConflict: "table_number,evaluator_name" }
+      { onConflict: `${matchColumn},evaluator_name` }
     );
     setSaving(false);
 
@@ -134,14 +203,33 @@ export function ScoreForm({
     router.push(backHref);
   }
 
+  const timerBar = (
+    <div
+      className={`flex items-center justify-between rounded-card px-5 py-3 text-white transition-colors duration-500 ${timerClasses(secondsLeft)}`}
+    >
+      <span className="text-sm font-medium text-white/90">
+        {secondsLeft > 0 ? "Time for this team" : "Time's up"}
+      </span>
+      <span className="font-display text-2xl font-semibold tabular-nums text-white">
+        {formatClock(secondsLeft)}
+      </span>
+    </div>
+  );
+
   if (loading) {
-    return <p className="text-sm text-lenovo-muted">Loading your scorecard...</p>;
+    return (
+      <div className="space-y-4">
+        {timerBar}
+        <p className="text-sm text-lenovo-muted">Loading your scorecard...</p>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-4">
+      {timerBar}
       {RUBRIC.map((criterion) => (
-        <Stepper
+        <Slider
           key={criterion.key}
           label={criterion.title}
           value={scores[criterion.key]}

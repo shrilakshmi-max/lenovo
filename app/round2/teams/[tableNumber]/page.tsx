@@ -102,7 +102,8 @@ export default function Round2TeamGradingPage() {
 
             {evaluatorName ? (
               <ScoreForm
-                tableNumber={team.table_number}
+                matchColumn="table_number"
+                matchValue={team.table_number}
                 evaluatorName={evaluatorName}
                 scoresTable="round2_scores"
                 backHref="/round2/teams"

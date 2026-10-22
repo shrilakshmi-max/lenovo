@@ -11,11 +11,15 @@ export interface Team {
   project_theme: string | null;
   project_link: string | null;
   pitch_night_marks: number | null;
-  group_number: 1 | 2 | 3 | 4;
+  group_number: 1 | 2 | 3 | 4 | 5;
   // Only present on rows from the "teams" table (round 1 / UP). Rows from
-  // "pune_teams" don't have this column - it's optional so the same Team
-  // type can represent both.
+  // "pune_teams"/"raipur_teams" don't have this column - it's optional so
+  // the same Team type can represent all of them.
   round2_qualified?: boolean;
+  // Only present on rows from "raipur_teams" - whether this is a
+  // one-person team (which may share its table_number with exactly one
+  // other solo team, so table_number isn't unique there).
+  is_solo?: boolean;
 }
 
 export interface Score {
@@ -41,7 +45,7 @@ export interface LeaderboardRow {
   project_title: string | null;
   project_theme: string | null;
   project_link?: string | null;
-  group_number?: 1 | 2 | 3 | 4;
+  group_number?: 1 | 2 | 3 | 4 | 5;
   evaluations_count: number;
   average_total: number | null;
   avg_theme_alignment: number | null;
