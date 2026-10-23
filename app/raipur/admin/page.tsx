@@ -1,8 +1,10 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Header } from "@/components/Header";
 import { useRaipurEvaluator } from "@/lib/useRaipurEvaluator";
+import { RAIPUR_EVALUATOR_GROUPS } from "@/lib/raipur";
+import { supabase } from "@/lib/supabaseClient";
 
 interface ImportResult {
   imported: number;
@@ -11,6 +13,21 @@ interface ImportResult {
 
 interface ClearResult {
   removed: number;
+}
+
+interface TeamRow {
+  team_id: string;
+  team_name: string | null;
+  table_number: number | null;
+  location: string | null;
+  group_number: number;
+}
+
+interface TeamEdit {
+  // Either a plain table number or a text location ("Lab 1") typed into
+  // the same cell - whichever the admin's last edit resolved to.
+  field: string;
+  groupNumber: number;
 }
 
 export default function RaipurAdminPage() {
@@ -39,6 +56,116 @@ export default function RaipurAdminPage() {
   const [rosterClearing, setRosterClearing] = useState(false);
   const [rosterClearError, setRosterClearError] = useState<string | null>(null);
   const [rosterClearResult, setRosterClearResult] = useState<ClearResult | null>(null);
+
+  const [teams, setTeams] = useState<TeamRow[] | null>(null);
+  const [teamsLoading, setTeamsLoading] = useState(false);
+  const [teamsError, setTeamsError] = useState<string | null>(null);
+  const [teamSearch, setTeamSearch] = useState("");
+  const [edits, setEdits] = useState<Record<string, TeamEdit>>({});
+  const [savingTeamId, setSavingTeamId] = useState<string | null>(null);
+  const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
+  const [rowSaved, setRowSaved] = useState<Record<string, boolean>>({});
+
+  function fieldForTeam(t: TeamRow): string {
+    return t.table_number != null ? String(t.table_number) : t.location ?? "";
+  }
+
+  async function loadTeams() {
+    setTeamsLoading(true);
+    setTeamsError(null);
+    const { data, error } = await supabase
+      .from("raipur_teams")
+      .select("team_id, team_name, table_number, location, group_number")
+      .order("team_id", { ascending: true });
+
+    if (error) {
+      setTeamsError(error.message);
+      setTeamsLoading(false);
+      return;
+    }
+    const rows = (data as TeamRow[]) ?? [];
+    setTeams(rows);
+    setEdits(
+      rows.reduce<Record<string, TeamEdit>>((acc, t) => {
+        acc[t.team_id] = { field: fieldForTeam(t), groupNumber: t.group_number };
+        return acc;
+      }, {})
+    );
+    setTeamsLoading(false);
+  }
+
+  useEffect(() => {
+    loadTeams();
+  }, []);
+
+  const filteredTeams = useMemo(() => {
+    if (!teams) return [];
+    const q = teamSearch.trim().toLowerCase();
+    if (!q) return teams;
+    return teams.filter(
+      (t) =>
+        t.team_id.toLowerCase().includes(q) ||
+        (t.team_name ?? "").toLowerCase().includes(q)
+    );
+  }, [teams, teamSearch]);
+
+  async function saveTeamRow(teamId: string) {
+    const draft = edits[teamId];
+    if (!draft) return;
+
+    if (!password) {
+      setRowErrors((prev) => ({ ...prev, [teamId]: "Enter the admin passcode first." }));
+      return;
+    }
+    const trimmed = draft.field.trim();
+    if (!trimmed) {
+      setRowErrors((prev) => ({ ...prev, [teamId]: "Enter a table number or a location." }));
+      return;
+    }
+    const isNumeric = /^\d+$/.test(trimmed);
+    const tableNumber = isNumeric ? Number(trimmed) : null;
+    const location = isNumeric ? null : trimmed;
+
+    setSavingTeamId(teamId);
+    setRowErrors((prev) => ({ ...prev, [teamId]: "" }));
+    setRowSaved((prev) => ({ ...prev, [teamId]: false }));
+
+    try {
+      const res = await fetch("/api/raipur/teams/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          password,
+          teamId,
+          tableNumber,
+          location,
+          groupNumber: draft.groupNumber,
+        }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        setRowErrors((prev) => ({ ...prev, [teamId]: body.error || "Save failed." }));
+        return;
+      }
+      setTeams((prev) =>
+        prev
+          ? prev.map((t) =>
+              t.team_id === teamId
+                ? { ...t, table_number: tableNumber, location, group_number: draft.groupNumber }
+                : t
+            )
+          : prev
+      );
+      setRowSaved((prev) => ({ ...prev, [teamId]: true }));
+    } catch (err) {
+      setRowErrors((prev) => ({
+        ...prev,
+        [teamId]: err instanceof Error ? err.message : "Save failed.",
+      }));
+    } finally {
+      setSavingTeamId(null);
+    }
+  }
 
   function onFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -431,6 +558,132 @@ export default function RaipurAdminPage() {
               {clearing ? "Clearing..." : "Delete all data"}
             </button>
           </div>
+        </div>
+
+        <div className="mt-4 rounded-card border border-lenovo-line bg-white p-5 shadow-card">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-display text-base font-semibold text-lenovo-ink">
+                Edit a team's table &amp; evaluator group
+              </h2>
+              <p className="mt-1 text-sm text-lenovo-muted">
+                Correct one team at a time after the registration desk has
+                assigned it. The table/location cell accepts either a plain
+                number (e.g. <code>7</code>) or a text location (e.g.{" "}
+                <code>Lab 1</code>).
+              </p>
+            </div>
+            <button
+              onClick={loadTeams}
+              disabled={teamsLoading}
+              className="touch-target rounded-full border border-lenovo-line px-4 text-sm font-medium text-lenovo-muted hover:border-lenovo-red hover:text-lenovo-red disabled:opacity-60"
+            >
+              {teamsLoading ? "Refreshing..." : "Refresh"}
+            </button>
+          </div>
+
+          <input
+            value={teamSearch}
+            onChange={(e) => setTeamSearch(e.target.value)}
+            placeholder="Filter by Team ID or team name..."
+            className="touch-target mt-4 w-full rounded-lg border border-lenovo-line px-3 text-base focus:border-lenovo-red focus:outline-none"
+          />
+
+          {teamsError ? (
+            <p className="mt-3 rounded-card border border-lenovo-maroon/30 bg-lenovo-maroon/5 p-3 text-sm text-lenovo-maroon">
+              Could not load teams: {teamsError}
+            </p>
+          ) : null}
+
+          {!teams && teamsLoading ? (
+            <p className="mt-3 text-sm text-lenovo-muted">Loading teams...</p>
+          ) : null}
+
+          {teams && teams.length === 0 ? (
+            <p className="mt-3 text-sm text-lenovo-muted">
+              No teams have been registered yet.
+            </p>
+          ) : null}
+
+          {teams && teams.length > 0 ? (
+            <div className="mt-4 -mx-5 overflow-x-auto px-5">
+              <table className="w-full min-w-[640px] border-collapse text-left text-sm">
+                <thead>
+                  <tr className="border-b border-lenovo-line text-xs uppercase tracking-wide text-lenovo-muted">
+                    <th className="whitespace-nowrap py-2 pr-3 font-semibold">Team ID</th>
+                    <th className="py-2 pr-3 font-semibold">Team name</th>
+                    <th className="whitespace-nowrap py-2 pr-3 font-semibold">Table / location</th>
+                    <th className="whitespace-nowrap py-2 pr-3 font-semibold">Evaluator group</th>
+                    <th className="whitespace-nowrap py-2 pr-3 font-semibold"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredTeams.map((t) => {
+                    const draft = edits[t.team_id] ?? {
+                      field: fieldForTeam(t),
+                      groupNumber: t.group_number,
+                    };
+                    const dirty =
+                      draft.field !== fieldForTeam(t) || draft.groupNumber !== t.group_number;
+                    return (
+                      <tr key={t.team_id} className="border-b border-lenovo-line">
+                        <td className="whitespace-nowrap py-2 pr-3 font-medium text-lenovo-ink">
+                          {t.team_id}
+                        </td>
+                        <td className="py-2 pr-3 text-lenovo-muted">
+                          {t.team_name || "Unnamed team"}
+                        </td>
+                        <td className="py-2 pr-3">
+                          <input
+                            value={draft.field}
+                            onChange={(e) =>
+                              setEdits((prev) => ({
+                                ...prev,
+                                [t.team_id]: { ...draft, field: e.target.value },
+                              }))
+                            }
+                            className="touch-target w-28 rounded-lg border border-lenovo-line px-2 text-sm focus:border-lenovo-red focus:outline-none"
+                          />
+                        </td>
+                        <td className="py-2 pr-3">
+                          <select
+                            value={draft.groupNumber}
+                            onChange={(e) =>
+                              setEdits((prev) => ({
+                                ...prev,
+                                [t.team_id]: { ...draft, groupNumber: Number(e.target.value) },
+                              }))
+                            }
+                            className="touch-target rounded-lg border border-lenovo-line bg-white px-2 text-sm focus:border-lenovo-red focus:outline-none"
+                          >
+                            {RAIPUR_EVALUATOR_GROUPS.map((g) => (
+                              <option key={g.groupNumber} value={g.groupNumber}>
+                                {g.label} - {g.evaluators.join(" & ")}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="py-2 pr-3">
+                          <button
+                            onClick={() => saveTeamRow(t.team_id)}
+                            disabled={!dirty || savingTeamId === t.team_id}
+                            className="touch-target rounded-full bg-lenovo-red px-4 text-sm font-semibold text-white transition-colors hover:bg-lenovo-red-dark disabled:opacity-40"
+                          >
+                            {savingTeamId === t.team_id ? "Saving..." : "Save"}
+                          </button>
+                          {rowErrors[t.team_id] ? (
+                            <p className="mt-1 text-xs text-lenovo-maroon">{rowErrors[t.team_id]}</p>
+                          ) : rowSaved[t.team_id] && !dirty ? (
+                            <p className="mt-1 text-xs text-lenovo-success">Saved</p>
+                          ) : null}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
         </div>
       </main>
     </div>
