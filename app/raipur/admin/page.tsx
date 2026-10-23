@@ -63,6 +63,7 @@ export default function RaipurAdminPage() {
   const [teamSearch, setTeamSearch] = useState("");
   const [edits, setEdits] = useState<Record<string, TeamEdit>>({});
   const [savingTeamId, setSavingTeamId] = useState<string | null>(null);
+  const [deletingTeamId, setDeletingTeamId] = useState<string | null>(null);
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
   const [rowSaved, setRowSaved] = useState<Record<string, boolean>>({});
 
@@ -164,6 +165,49 @@ export default function RaipurAdminPage() {
       }));
     } finally {
       setSavingTeamId(null);
+    }
+  }
+
+  async function deleteTeamRow(teamId: string) {
+    if (!password) {
+      setRowErrors((prev) => ({ ...prev, [teamId]: "Enter the admin passcode first." }));
+      return;
+    }
+    if (
+      !window.confirm(
+        `Delete team ${teamId}? This removes the team and all of its scores, and lets it be registered again from the desk. There is no undo.`
+      )
+    ) {
+      return;
+    }
+
+    setDeletingTeamId(teamId);
+    setRowErrors((prev) => ({ ...prev, [teamId]: "" }));
+
+    try {
+      const res = await fetch("/api/raipur/teams/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password, teamId }),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        setRowErrors((prev) => ({ ...prev, [teamId]: body.error || "Delete failed." }));
+        return;
+      }
+      setTeams((prev) => (prev ? prev.filter((t) => t.team_id !== teamId) : prev));
+      setEdits((prev) => {
+        const next = { ...prev };
+        delete next[teamId];
+        return next;
+      });
+    } catch (err) {
+      setRowErrors((prev) => ({
+        ...prev,
+        [teamId]: err instanceof Error ? err.message : "Delete failed.",
+      }));
+    } finally {
+      setDeletingTeamId(null);
     }
   }
 
@@ -664,13 +708,22 @@ export default function RaipurAdminPage() {
                           </select>
                         </td>
                         <td className="py-2 pr-3">
-                          <button
-                            onClick={() => saveTeamRow(t.team_id)}
-                            disabled={!dirty || savingTeamId === t.team_id}
-                            className="touch-target rounded-full bg-lenovo-red px-4 text-sm font-semibold text-white transition-colors hover:bg-lenovo-red-dark disabled:opacity-40"
-                          >
-                            {savingTeamId === t.team_id ? "Saving..." : "Save"}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => saveTeamRow(t.team_id)}
+                              disabled={!dirty || savingTeamId === t.team_id}
+                              className="touch-target rounded-full bg-lenovo-red px-4 text-sm font-semibold text-white transition-colors hover:bg-lenovo-red-dark disabled:opacity-40"
+                            >
+                              {savingTeamId === t.team_id ? "Saving..." : "Save"}
+                            </button>
+                            <button
+                              onClick={() => deleteTeamRow(t.team_id)}
+                              disabled={deletingTeamId === t.team_id}
+                              className="touch-target rounded-full border-2 border-lenovo-maroon px-4 text-sm font-semibold text-lenovo-maroon transition-colors hover:bg-lenovo-maroon hover:text-white disabled:opacity-40"
+                            >
+                              {deletingTeamId === t.team_id ? "Deleting..." : "Delete"}
+                            </button>
+                          </div>
                           {rowErrors[t.team_id] ? (
                             <p className="mt-1 text-xs text-lenovo-maroon">{rowErrors[t.team_id]}</p>
                           ) : rowSaved[t.team_id] && !dirty ? (
